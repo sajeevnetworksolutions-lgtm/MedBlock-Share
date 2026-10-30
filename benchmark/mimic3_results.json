@@ -1,0 +1,57 @@
+{
+  "timestamp": 1793370596,
+  "sample_records": 10000,
+  "crypto_latencies_ms": {
+    "aes_bbs98_encryption": 0.44,
+    "proxy_re_encryption": 0.16,
+    "doctor_decryption": 0.24
+  },
+  "tele_triage_sos_latencies_ms": {
+    "mean": 32.16,
+    "p95": 44.54,
+    "p99": 45.85,
+    "max": 46.64,
+    "target_bound": 380,
+    "compliant": true
+  },
+  "economic_cost_analysis": {
+    "raw_ethereum_l1_10mb_usd": 653721.6,
+    "medblock_polygon_l2_usd": 0.0018,
+    "cost_reduction_percent": 100.0
+  },
+  "tamper_alert_gas": {
+    "consumed": 28825,
+    "bound": 42500,
+    "compliant": true
+  },
+  "comparative_table": [
+    {
+      "framework": "Traditional Cloud EHR",
+      "emergency_response": "15 - 30 minutes",
+      "tamper_detection": "Passive Audit Log",
+      "storage_cost_10mb": "$0.0002 / mo",
+      "attacker_attribution": "Internal Server Log Only"
+    },
+    {
+      "framework": "Standard Ethereum EHR",
+      "emergency_response": "No Tele-Triage",
+      "tamper_detection": "Tx Reverts (No Alert)",
+      "storage_cost_10mb": ">$653,721.60 (Prohibitive)",
+      "attacker_attribution": "Wallet Address Only"
+    },
+    {
+      "framework": "Hyperledger Baseline",
+      "emergency_response": "Manual Notification",
+      "tamper_detection": "Channel Rejection",
+      "storage_cost_10mb": "$0.04 / tx",
+      "attacker_attribution": "Node ID (Permissioned)"
+    },
+    {
+      "framework": "MedBlock-Share (Ours)",
+      "emergency_response": "< 32.2 ms (Live WebRTC)",
+      "tamper_detection": "Instant Dual Alert",
+      "storage_cost_10mb": "$0.0018 (Polygon L2)",
+      "attacker_attribution": "Full Proxy IP + Signature"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+# Node dependencies
+node_modules/
+package-lock.json
+
+# Hardhat artifacts & cache
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# Python cache & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# IPFS local chunks & temporary data
+data/ipfs_chunks/
+data/
+
+# Environment variables & local secrets
+.env
+.env.local
+
+# Operating System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
