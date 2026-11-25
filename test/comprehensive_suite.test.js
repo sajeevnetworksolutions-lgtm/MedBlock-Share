@@ -313,11 +313,11 @@ describe("MedBlock-Share Full-Stack Master Test Suite", () => {
       const msg = teleTriage.sendPrecautionMessage(callId, {
         sender: blockchain.accounts.doctor,
         senderRole: "doctor",
-        message: "Chew 325mg Aspirin immediately. Elevate head 45 degrees."
+        message: "Emergency notification received. Awaiting assessment by an authorized clinician."
       });
 
       assert.strictEqual(msg.senderRole, "doctor");
-      assert.ok(msg.message.includes("325mg Aspirin"));
+      assert.ok(msg.message.includes("Awaiting assessment"));
 
       const session = teleTriage.getCall(callId);
       assert.strictEqual(session.chat.length, 1);

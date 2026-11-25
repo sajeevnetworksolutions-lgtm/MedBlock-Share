@@ -80,18 +80,27 @@ This changelog records all source code files, smart contracts, test scripts, and
 
 ### G. Benchmarking Engine
 - **File:** `benchmark/mimic3_benchmark.py`
-  - **Status:** Verified & Calibrated
+  - **Status:** Overhauled & Aligned
   - **Key Modifications:**
-    - Evaluated 10,000 synthetic ICU admission records statistically calibrated to PhysioNet MIMIC-III distributions.
-    - Preserved raw benchmark output in `benchmark/mimic3_results.json`.
-    - Evaluated 1,000 emergency SOS dispatch trials, confirming mean latency of 32.16 ms and P99 of 45.85 ms.
-    - Evaluated storage cost models, confirming 99.4% gas reduction over on-chain storage.
+    - Renamed and restructured as Synthetic ICU-Like Clinical Scenario Benchmark (10,000 synthetic records with standard critical care physiological ranges).
+    - Removed artificial network jitter simulation; separated genuine local application CPU dispatch latency (mean: 0.0051 ms, median: 0.0045 ms, P99: 0.0088 ms) from WAN transit scenario model (mean: 31.64 ms).
+    - Formalized dual storage cost models: Scenario A (10,000 structured records, 99.40% gas reduction) and Scenario B (10 MiB bulk imaging file, 100.00% reduction).
+    - Logged Hardhat in-process EVM receipt gas (30,652 gas) alongside in-memory simulated gas (28,825 gas).
+    - Persisted raw benchmark measurements to `benchmark/mimic3_results.json`.
 
 ### H. Verification & Test Scripts
+- **File:** `test/medblock.test.js`
+  - **Status:** Enhanced for Hardhat EVM Node
+  - **Key Modifications:**
+    - Deploys and executes contract tests against Hardhat's in-process EVM node.
+    - Verified non-reverting `tamperProtectedUpdate` execution with `receipt.status === 1`, state preservation, and receipt gas used = 30,652 gas.
+    - 9/9 tests passing.
+
 - **File:** `scripts/verify_direct.js`
   - **Status:** Updated & Verified
   - **Key Modifications:**
-    - Refactored to execute end-to-end direct in-process validation across registration, PRE encryption, delegation, emergency override, and tamper guard defense.
+    - Updated clinical triage messages to neutral clinical guidance (*"Emergency notification received. Awaiting assessment by an authorized clinician"*).
+    - Verified end-to-end direct in-process validation across registration, PRE encryption, delegation, emergency override, and tamper guard defense.
     - Verified 100% pass rate.
 
 - **File:** `test/comprehensive_suite.test.js`

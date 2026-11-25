@@ -352,12 +352,12 @@ def run_self_test():
 
     # 3. Medical payload encryption
     clinical_payload = (
-        b"PATIENT EHR RECORD [HIPAA DE-IDENTIFIED TEST]\n"
-        b"Patient ID: MED-88219-ALPHA\n"
-        b"Diagnosis: Acute Anterior Myocardial Infarction\n"
+        b"DEMONSTRATION SYNTHETIC EHR RECORD [SYNTHETIC DEMO DATA - NOT REAL PHI]\n"
+        b"Patient ID: DEMO-PATIENT-88219\n"
+        b"Diagnosis: Acute Anterior Myocardial Infarction (Synthetic Scenario)\n"
         b"ECG: ST Elevation V1-V4, Reciprocal Depressions Lead II, III\n"
         b"Vitals: HR 142 bpm | BP 184/110 mmHg | SpO2 88%\n"
-        b"Prescription: Sublingual Nitroglycerin 0.4mg, IV Heparin"
+        b"Clinical Note: Emergency notification received. Awaiting assessment by an authorized clinician."
     )
 
     encrypted = pipeline.encrypt_medical_record(clinical_payload, pk_alice)

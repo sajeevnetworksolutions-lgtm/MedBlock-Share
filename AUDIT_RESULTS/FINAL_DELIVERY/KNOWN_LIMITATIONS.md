@@ -61,32 +61,51 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 ## 5. Emergency Tele-Triage & WebRTC Latency Boundaries
 
 ### 5.1 Signaling Latency vs. End-to-End Media Establishment
-* **Measurement Reality:** The empirically verified latency of **$32.16 \pm 4.8$ ms** represents the **Emergency SOS signaling notification delay** (from patient button click, through on-chain override, to physician socket alert).
-* **Media Handshake:** Establishing an interactive peer-to-peer WebRTC audio/video call requires STUN/TURN binding discovery, ICE candidate exchange, and DTLS-SRTP cryptographic handshakes, which typically require **280 ms to 450 ms** across standard consumer internet connections. Total clinician-patient audiovisual availability is achieved in **$325 \pm 28$ ms**.
-* **Clinical Disclaimer:** MedBlock-Share is an academic research prototype. Deployment in live clinical emergency triage requires integration with dedicated emergency telecommunications infrastructure, high-availability TURN relays (with Business Associate Agreements), and institutional regulatory review.
+* **Measurement Reality:** The tele-triage workflow separates local CPU processing, local HTTP transport, and client audiovisual media establishment:
+  1. **Local Application CPU Dispatch:** Empirically measured at **$0.0051 \pm 0.0016$ ms** (median: 0.0045 ms, P99: 0.0088 ms).
+  2. **Local Loopback HTTP Request-Response:** Measured over local TCP sockets at **$12 - 18$ ms**.
+  3. **Synthetic WAN/5G Network Transit Model:** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.64 ms mean** (P99: 44.75 ms).
+* **WebRTC Media Streaming Boundary:** Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the academic literature.
+* **Clinical Safety & Non-Prescriptive Status:** MedBlock-Share provides automated triage notification and communication signaling, never automated medical prescriptions (e.g., nitroglycerin, aspirin). All emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). All patient records in demonstrations and benchmarks are synthetic data. This software is an academic research prototype and not a certified medical device.
 
 ---
 
-## 6. Dataset Provenance & Calibration
+## 6. Dataset Provenance & Terminology
 
-### 6.1 Synthetic Calibration vs. Restricted PhysioNet MIMIC-III Data
-* **Data Provenance:** The 10,000 records evaluated in `benchmark/mimic3_benchmark.py` are **statistically calibrated synthetic patient records** derived from empirical MIMIC-III intensive care distributions (demographics, ICU length of stay, laboratory biomarkers, diagnostic code frequencies).
-* **Rationale:** Raw PhysioNet MIMIC-III data is protected by human research subject protections and strict Data Use Agreements requiring individual CITI program credentialing. Distributing raw patient data in a public repository would constitute an ethical and legal breach. Synthetic calibration provides 100% benchmark reproducibility while maintaining privacy compliance.
+### 6.1 Synthetic ICU Scenario Benchmark vs. Restricted Clinical Data
+* **Data Provenance:** The 10,000 records evaluated in `benchmark/mimic3_benchmark.py` are generated under a **Synthetic ICU-Like Clinical Scenario Benchmark** modeling standard critical care physiological ranges (heart rate 55–140 bpm, blood pressure 85/50–180/110 mmHg, SpO2 88–100%, respiratory rate 10–32 bpm) across major ICU trauma categories.
+* **Rationale:** Raw PhysioNet MIMIC-III data is protected by human research subject protections and strict Data Use Agreements requiring individual CITI program credentialing. Generating synthetic records without published calibration cannot be claimed as a statistically calibrated MIMIC-III dataset. Synthetic scenario modeling provides 100% benchmark reproducibility while maintaining privacy compliance and human research ethics.
 
 ---
 
-## 7. Development vs. Production Environment Differences
+## 7. Storage Cost, IPFS Adapter & EVM Tamper Defense Gas
+
+### 7.1 Dual Storage Scenarios
+- **Scenario A (10,000 Structured Records of ~256 Bytes):** 1,600,000,000 gas on-chain vs 9,600,000 gas MedBlock-Share $\to$ **99.40% gas reduction**.
+- **Scenario B (10 MiB Bulk Medical Imaging File):** 6,553,600,000 gas on-chain vs 84,210 gas Polygon L2 CID anchor $\to$ **100.00% gas reduction**.
+
+### 7.2 IPFS Adapter Scope
+- `server/ipfs_node.js` provides a local content-addressed storage adapter (IPFS emulation for development).
+- Production deployments connect to a dedicated external Kubo IPFS node or Pinata pinning service. Local unpinning purges data locally, but does not guarantee global deletion across external public IPFS nodes if third-party peers have cached the data.
+
+### 7.3 Tamper Defense Gas Consumption
+- Hardhat in-process EVM Node (`test/medblock.test.js`): **30,652 gas** receipt (`receipt.status === 1`, state preserved).
+- Simulated In-Memory Execution Engine: **28,825 gas** ($\le 42,500$ gas limit).
+
+---
+
+## 8. Development vs. Production Environment Differences
 
 | Subsystem | Development Implementation | Production Deployment Target |
 | :--- | :--- | :--- |
 | **Blockchain** | In-Memory Cancun EVM Engine / Hardhat Node | Ethereum L2 Testnet/Mainnet (e.g., Polygon Amoy, Arbitrum) |
-| **IPFS Storage** | Local In-Memory Content Addressing Mock | Distributed IPFS Cluster (Kubo nodes, Pinata pinning service) |
+| **IPFS Storage** | Local Content-Addressed Adapter (`server/ipfs_node.js`) | Distributed IPFS Cluster (Kubo nodes, Pinata pinning service) |
 | **PRE Engine** | Python 3.11 / Node.js BigInt Subgroup Engine | Hardware Security Module (HSM) / Secure Enclave (SGX) |
 | **WebRTC Signaling**| Node.js SSE / REST Signaling Bridge | Scalable Redis-backed WebSocket cluster with coturn servers |
 | **RPC Gateway** | Localhost HTTP / JSON-RPC | Load-balanced reverse proxy with WAF, Cloudflare, and mTLS |
 
 ---
 
-## 8. Summary of Disclosure
+## 9. Summary of Disclosure
 
 These limitations do not diminish the scientific validity or engineering excellence of MedBlock-Share; rather, they provide an honest, peer-reviewed foundation upon which secure healthcare architectures can be evaluated, deployed, and enhanced.

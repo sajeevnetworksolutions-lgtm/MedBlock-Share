@@ -162,14 +162,19 @@ describe("MedBlock-Share Smart Contract Suite (M.Tech Dissertation Specification
         ethers.getBytes(ethers.keccak256(ethers.toUtf8Bytes("fake")))
       );
 
-      const tx = await medBlock.connect(attacker).attemptTamperRecord(
+      const fakeDataHash = ethers.keccak256(ethers.toUtf8Bytes("fakeData"));
+      const tx = await medBlock.connect(attacker).tamperProtectedUpdate(
         RECORD_ID,
         FAKE_CID,
+        fakeDataHash,
         ATTACKER_PROXY_IP,
         ATTACK_VECTOR,
         ATTACK_PAYLOAD,
         fakeSignature
       );
+
+      const receipt = await tx.wait();
+      expect(receipt.status).to.equal(1); // Non-reverting execution: transaction succeeds cleanly!
 
       await expect(tx)
         .to.emit(medBlock, "UnauthorizedTamperAttempt")

@@ -1,56 +1,100 @@
 {
-  "timestamp": 1795615770,
+  "timestamp": 1795618280,
+  "benchmark_type": "Synthetic ICU-Like Clinical Scenario Benchmark",
+  "dataset_description": "10,000 synthetic patient records with standard ICU vital-sign distributions (non-restricted demonstration data)",
   "sample_records": 10000,
-  "crypto_latencies_ms": {
-    "aes_bbs98_encryption": 0.7,
-    "proxy_re_encryption": 0.33,
-    "doctor_decryption": 0.22
-  },
+  "payload_volume_bytes": 3971525,
   "tele_triage_sos_latencies_ms": {
-    "mean": 32.31,
-    "p95": 44.79,
-    "p99": 45.8,
-    "max": 46.23,
+    "mean": 0.0085,
+    "p95": 0.0117,
+    "p99": 0.0373,
+    "modeled_wan_mean": 31.05,
     "target_bound": 380,
     "compliant": true
   },
   "economic_cost_analysis": {
-    "raw_ethereum_l1_10mb_usd": 653721.6,
-    "medblock_polygon_l2_usd": 0.0018,
-    "cost_reduction_percent": 100.0
+    "cost_reduction_percent": 99.4,
+    "bulk_cost_reduction_percent": 100.0,
+    "scenario_a_gas_savings_pct": 99.4
   },
   "tamper_alert_gas": {
-    "consumed": 28825,
+    "consumed": 30652,
     "bound": 42500,
     "compliant": true
   },
-  "comparative_table": [
+  "crypto_latencies_ms": {
+    "aes_bbs98_encryption_mean": 0.627,
+    "proxy_re_encryption_mean": 0.367,
+    "doctor_decryption_mean": 0.263
+  },
+  "emergency_sos_latencies": {
+    "genuine_local_application_processing_ms": {
+      "mean": 0.0085,
+      "median": 0.0076,
+      "std_dev": 0.0052,
+      "min": 0.0072,
+      "max": 0.1163,
+      "p95": 0.0117,
+      "p99": 0.0373,
+      "target_bound_ms": 380,
+      "compliant": true
+    },
+    "theoretical_wan_cellular_model_ms": {
+      "description": "Local CPU latency + modeled 18-45 ms 5G/cellular transit delay",
+      "mean": 31.05,
+      "p95": 43.12,
+      "p99": 44.39
+    }
+  },
+  "storage_cost_scenario_analysis": {
+    "scenario_a_10000_records": {
+      "total_records": 10000,
+      "native_onchain_storage_gas": 1600000000,
+      "medblock_anchor_storage_gas": 9600000,
+      "gas_reduction_percent": 99.4
+    },
+    "scenario_b_10mb_bulk_file": {
+      "file_size_bytes": 10485760,
+      "native_l1_gas": 6553600000,
+      "native_l1_cost_usd": 589824.0,
+      "medblock_polygon_l2_gas": 84210,
+      "medblock_polygon_l2_cost_usd": 0.0018,
+      "cost_reduction_percent": 100.0
+    }
+  },
+  "tamper_defense_gas_audit": {
+    "hardhat_evm_receipt_gas": 30652,
+    "target_bound_ceiling": 42500,
+    "margin_below_bound": 11848,
+    "compliant": true
+  },
+  "comparative_summary": [
     {
       "framework": "Traditional Cloud EHR",
-      "emergency_response": "15 - 30 minutes",
-      "tamper_detection": "Passive Audit Log",
-      "storage_cost_10mb": "$0.0002 / mo",
-      "attacker_attribution": "Internal Server Log Only"
+      "emergency_response": "15 - 30 minutes (Manual)",
+      "tamper_detection": "Passive Centralized Audit Log",
+      "storage_cost_10mb": "$0.0002 / mo (AWS S3)",
+      "attacker_attribution": "Server Ingress Log Only"
     },
     {
-      "framework": "Standard Ethereum EHR",
-      "emergency_response": "No Tele-Triage",
-      "tamper_detection": "Tx Reverts (No Alert)",
-      "storage_cost_10mb": ">$653,721.60 (Prohibitive)",
-      "attacker_attribution": "Wallet Address Only"
+      "framework": "Standard Ethereum EHR (Full On-Chain)",
+      "emergency_response": "No Real-Time Tele-Triage",
+      "tamper_detection": "Reverts Execution (Logs Rolled Back)",
+      "storage_cost_10mb": ">$589,824.00 USD (Prohibitive)",
+      "attacker_attribution": "Caller Wallet Address Only"
     },
     {
-      "framework": "Hyperledger Baseline",
-      "emergency_response": "Manual Notification",
+      "framework": "Hyperledger Permissioned Baseline",
+      "emergency_response": "Manual Push Notification",
       "tamper_detection": "Channel Rejection",
-      "storage_cost_10mb": "$0.04 / tx",
-      "attacker_attribution": "Node ID (Permissioned)"
+      "storage_cost_10mb": "$0.04 / tx (Consortium Node)",
+      "attacker_attribution": "Organization Node ID"
     },
     {
-      "framework": "MedBlock-Share (Ours)",
-      "emergency_response": "32.3 ms signaling (<380ms bound)",
-      "tamper_detection": "Non-Reverting Persistent Event",
-      "storage_cost_10mb": "$0.0018 (Polygon L2)",
+      "framework": "MedBlock-Share (Research Prototype)",
+      "emergency_response": "Sub-millisecond local dispatch (0.008 ms local / 31.1 ms modeled WAN)",
+      "tamper_detection": "Non-Reverting Persistent Event (30,652 gas)",
+      "storage_cost_10mb": "$0.0018 USD (Off-Chain CID Anchor)",
       "attacker_attribution": "Ingress Proxy IP + ECDSA Signature (Network Topology)"
     }
   ]

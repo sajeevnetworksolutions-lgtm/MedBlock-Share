@@ -31,9 +31,9 @@ Advanced Cryptographic \& Decentralized Systems Laboratory\\
 \begin{abstract}
 Cross-institutional sharing of Electronic Health Records (EHR) demands high confidentiality, patient-controlled sovereignty, low-latency emergency intervention, and non-repudiable auditing. Traditional centralized healthcare data repositories suffer from single-point-of-failure vulnerabilities and vendor lock-in, while naive public blockchain implementations incur prohibitive on-chain storage gas costs and conflict with regulatory right-to-erasure mandates. 
 
-This paper presents \textbf{MedBlock-Share}, an end-to-end decentralized framework combining Ethereum smart contracts, InterPlanetary File System (IPFS) content-addressed distributed storage, and Blaze-Bleumer-Strauss (BBS98) Proxy Re-Encryption (PRE) integrated with an AES-256-GCM authenticated envelope. We formulate three core contributions: (1) A hybrid cryptographic protocol transforming 256-bit symmetric data encryption keys under delegated PRE without exposing plaintext records or private keys to the semi-trusted proxy; (2) An Ethereum Virtual Machine (EVM) non-reverting tamper defense guard (\texttt{tamperProtectedUpdate}) that resolves the classical EVM paradox where an unauthorized state transaction that reverts inevitably discards all emitted event logs, preserving persistent on-chain security audit records within a strictly bounded gas ceiling ($\le 42,500$ gas); and (3) A decoupled emergency tele-triage architecture enabling sub-50\,ms WebRTC signaling ($32.16 \pm 4.82$\,ms empirical mean) for rapid physician notification and peer-to-peer audiovisual consultation. 
+This paper presents \textbf{MedBlock-Share}, an end-to-end decentralized framework combining Ethereum smart contracts, InterPlanetary File System (IPFS) content-addressed distributed storage, and Blaze-Bleumer-Strauss (BBS98) Proxy Re-Encryption (PRE) integrated with an AES-256-GCM authenticated envelope. We formulate three core contributions: (1) A hybrid cryptographic protocol transforming 256-bit symmetric data encryption keys under delegated PRE without exposing plaintext records or private keys to the semi-trusted proxy; (2) An Ethereum Virtual Machine (EVM) non-reverting tamper defense guard (\texttt{tamperProtectedUpdate}) that resolves the classical EVM paradox where an unauthorized state transaction that reverts inevitably discards all emitted event logs, preserving persistent on-chain security audit records within a strictly bounded gas ceiling ($\le 42,500$ gas); and (3) A decoupled emergency tele-triage architecture enabling rapid on-chain emergency consent elevation, sub-millisecond local CPU dispatch ($0.0051 \pm 0.0016$\,ms empirical mean), and WebRTC signaling session lifecycle management. 
 
-Empirical benchmarks conducted over a 10,000-record dataset calibrated to PhysioNet MIMIC-III critical care distributions confirm a 99.4\% on-chain storage cost reduction relative to native storage, a verified tamper logging cost of 28,825 gas, and sub-100\,ms cryptographic end-to-end transformations. We present an unvarnished analysis of the algebraic bidirectionality and collusion properties of BBS98, alongside network-topology-level ingress forensic attribution.
+Empirical benchmarks conducted over a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm a 99.40\% on-chain storage cost reduction in structured records (100.00\% in bulk imaging), a verified tamper logging receipt cost of 30,652 gas on Hardhat EVM (28,825 gas in-memory simulation), and sub-millisecond cryptographic transformations. We present an unvarnished analysis of the algebraic bidirectionality and collusion properties of BBS98, alongside network-topology-level ingress forensic attribution.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -174,15 +174,15 @@ This pattern guarantees that the unauthorized transaction completes with status 
 
 \section{Emergency Tele-Triage and Forensics}
 
-\subsection{Decoupled Signaling Latency}
-The total latency $T_{\mathrm{total}}$ of the emergency tele-triage workflow decomposes into:
-\begin{equation}
-T_{\mathrm{total}} = T_{\mathrm{sig}} + T_{\mathrm{media}},
-\end{equation}
-where $T_{\mathrm{sig}}$ denotes the signaling dispatch delay and $T_{\mathrm{media}}$ is the peer-to-peer ICE/DTLS connection time:
-\begin{equation}
-T_{\mathrm{sig}} = t_{\mathrm{API}} + t_{\mathrm{contract}} + t_{\mathrm{SSE}} \le 50\,\mathrm{ms}.
-\end{equation}
+\subsection{Emergency Signaling Latency and Media Boundary}
+The tele-triage workflow separates local application processing, network transport, and client audiovisual media establishment:
+\begin{enumerate}
+    \item \textbf{Application CPU Dispatch Latency ($T_{\mathrm{proc}}$):} Empirically measured over 1,000 trials at $0.0051 \pm 0.0016$\,ms (median: 0.0045\,ms, P99: 0.0088\,ms).
+    \item \textbf{Local Loopback HTTP Latency:} Request-response over local TCP sockets measured at $12 - 18$\,ms.
+    \item \textbf{WAN Transit Scenario Model:} Simulated under wide-area jitter (18--45\,ms delay) with mean $31.64$\,ms and P99 $44.75$\,ms.
+    \item \textbf{WebRTC Media Streaming Boundary:} Headless server tests verify signaling exchange (offer, answer, ICE routing, and session state). Direct peer-to-peer audiovisual streaming requires client capture hardware and STUN/TURN infrastructure (unverified in headless server tests).
+    \item \textbf{Clinical Guidance Safety:} Emergency notifications dispatch neutral clinical triage notices (\emph{``Emergency notification received. Awaiting assessment by an authorized clinician''}). The system strictly avoids automated medication prescribing. All demonstration records are synthetic.
+\end{enumerate}
 
 \subsection{Forensic Attribution Reality}
 Smart contracts observe only Ethereum addresses and cryptographic signatures. To perform IP forensics, MedBlock-Share captures the HTTP reverse proxy and JSON-RPC node layer ($X\text{-Forwarded-For}$), mapping network ingress topology via MaxMind GeoIP2. The attribution strictly denotes network intermediary topology and Tor exit status, rather than verified physical identity.
@@ -190,29 +190,30 @@ Smart contracts observe only Ethereum addresses and cryptographic signatures. To
 \section{Empirical Evaluation}
 
 \subsection{Experimental Setup}
-Benchmarks were executed on an 8-core Intel Core i7-11800H processor with 16\,GB RAM running Node.js v24.13.1 and Python 3.11.2 under Ethereum Cancun EVM execution specifications. The test corpus comprises 10,000 synthetic patient records statistically calibrated to mimic PhysioNet MIMIC-III critical care distributions.
+Benchmarks were executed on an 8-core Intel Core i7-11800H processor with 16\,GB RAM running Node.js v24.13.1 and Python 3.11.2 under Ethereum Cancun EVM execution specifications. The test corpus comprises 10,000 synthetic patient records generated under a \textbf{Synthetic ICU-Like Clinical Scenario Benchmark} modeling physiological telemetry (heart rate, blood pressure, SpO2, respiratory rate) across emergency scenarios without exposing restricted clinical records.
 
 \subsection{Storage Efficiency}
-Table~\ref{tab:storage_cost} summarizes the storage efficiency of MedBlock-Share. By persisting bulk data on IPFS and anchoring only multihash CIDs on Ethereum, the system achieves a 99.4\% gas reduction.
+Table~\ref{tab:storage_cost} summarizes the storage efficiency across structured record and bulk medical imaging scenarios. By persisting bulk data on IPFS and anchoring multihash CIDs on Ethereum, the system achieves a 99.40\% to 100.00\% gas reduction.
 
 \begin{table}[h]
-\caption{Storage Cost Comparison for 10,000 Patient Records}
+\caption{Storage Cost Comparison Across Clinical Scenarios}
 \label{tab:storage_cost}
 \centering
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Architecture} & \textbf{Data Size} & \textbf{Gas Cost} & \textbf{Polygon L2 Cost} \\
+\textbf{Scenario} & \textbf{Data Size} & \textbf{Gas Cost} & \textbf{Polygon Cost} & \textbf{Reduction} \\
 \midrule
-Native On-Chain & 2.50 MB & 1,600,000,000 & \$48.00 \\
-MedBlock-Share & 320 KB on-chain & 9,600,000 & \textbf{\$0.0018} \\
+Scenario A (On-Chain) & 2.56 MB & 1,600,000,000 & \$48.00 & Baseline \\
+Scenario A (MedBlock) & 320 KB on-chain & 9,600,000 & \textbf{\$0.0018} & \textbf{99.40\%} \\
 \midrule
-\textbf{Reduction} & \textbf{--} & \textbf{99.4\%} & \textbf{99.4\%} \\
+Scenario B (On-Chain) & 10.49 MB & 6,553,600,000 & \$196.61 & Baseline \\
+Scenario B (MedBlock) & 32 B on-chain & 84,210 & \textbf{\$0.0018} & \textbf{100.00\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Latency and Execution Costs}
-Table~\ref{tab:benchmarks} summarizes performance across 1,000 experimental trials.
+Table~\ref{tab:benchmarks} summarizes measured performance across experimental trials.
 
 \begin{table}[h]
 \caption{Empirical Latency and Execution Benchmarks}
@@ -220,25 +221,29 @@ Table~\ref{tab:benchmarks} summarizes performance across 1,000 experimental tria
 \centering
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Operation} & \textbf{Mean} & \textbf{Std Dev} & \textbf{P99} & \textbf{Target} \\
+\textbf{Operation} & \textbf{Mean} & \textbf{Median} & \textbf{P99} & \textbf{Target} \\
 \midrule
-SOS Signaling & 32.16 ms & 4.82 ms & 45.85 ms & $\le 380$ ms \\
-AES-256-GCM Enc & 0.42 ms & 0.08 ms & 0.69 ms & $\le 5$ ms \\
-BBS98 PRE Trans & 2.15 ms & 0.38 ms & 3.40 ms & $\le 15$ ms \\
-Delegatee Dec & 1.95 ms & 0.34 ms & 3.10 ms & $\le 15$ ms \\
-Tamper Guard & 28,825 gas & 0 gas & 28,825 gas & $\le 42,500$ gas \\
+Emergency SOS (CPU) & 0.0051 ms & 0.0045 ms & 0.0088 ms & $\le 1.0$ ms \\
+Emergency SOS (HTTP)& 14.80 ms & 13.90 ms & 18.20 ms & $\le 50$ ms \\
+AES-256-GCM Enc & 0.141 ms & 0.138 ms & 0.180 ms & $\le 5$ ms \\
+BBS98 PRE KeyGen & 0.046 ms & 0.044 ms & 0.065 ms & $\le 10$ ms \\
+BBS98 PRE Transform & 0.003 ms & 0.003 ms & 0.005 ms & $\le 15$ ms \\
+Delegatee Decryption& 0.142 ms & 0.139 ms & 0.185 ms & $\le 15$ ms \\
+Tamper Guard (Hardhat) & 30,652 gas & 30,652 gas & 30,652 gas & $\le 42,500$ gas \\
+Tamper Guard (Simulated) & 28,825 gas & 28,825 gas & 28,825 gas & $\le 42,500$ gas \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{Security Analysis}
 \begin{itemize}
-    \item \textbf{Ciphertext Indistinguishability:} Under the Decisional Diffie-Hellman (DDH) assumption in $G_q$, BBS98 encapsulation achieves semantic security against chosen-plaintext attacks. Bulk payload confidentiality is maintained under IND-CCA2 security via AES-256-GCM.
-    \item \textbf{Collusion Boundary:} In BBS98, knowledge of $rk_{A \to B}$ and $sk_B$ allows computation of $sk_A = sk_B \cdot (rk_{A \to B})^{-1} \pmod q$. In MedBlock-Share, re-encryption keys are isolated in access-controlled environments and rotated upon revocation.
+    \item \textbf{Ciphertext Indistinguishability:} Under the Decisional Diffie-Hellman (DDH) assumption in $G_q$, BBS98 encapsulation achieves semantic security against chosen-plaintext attacks. Bulk payload confidentiality is maintained under IND-CCA2 security via AES-256-GCM envelope encryption.
+    \item \textbf{Collusion Boundary and Research Prototype Status:} In BBS98, knowledge of $rk_{A \to B}$ and $sk_B$ allows computation of $sk_A = sk_B \cdot (rk_{A \to B})^{-1} \pmod q$. In MedBlock-Share, re-encryption keys are isolated in access-controlled environments and rotated upon revocation. Algebraic correctness tests verify correctness without substituting for a formal reductionist proof.
+    \item \textbf{Storage Adapter Scope:} \texttt{server/ipfs\_node.js} operates as a development content-addressed storage adapter. Production deployments interface with Kubo or Pinata.
 \end{itemize}
 
 \section{Conclusion}
-MedBlock-Share presents a verified, sound decentralized architecture for patient-centric EHR sharing. By resolving the EVM revert-logging paradox, decoupling WebRTC emergency signaling, and integrating BBS98 PRE with AES-256-GCM, the system achieves robust security, 99.4\% storage savings, and sub-50\,ms emergency responsiveness.
+MedBlock-Share presents a verified, sound decentralized architecture for patient-centric EHR sharing. By resolving the EVM revert-logging paradox (30,652 gas receipt on Hardhat EVM), decoupling WebRTC emergency signaling, and integrating BBS98 PRE with AES-256-GCM, the system achieves robust security, 99.40\% to 100.00\% storage savings, and sub-millisecond emergency dispatch responsiveness.
 
 \bibliographystyle{IEEEtran}
 \begin{thebibliography}{10}

@@ -448,7 +448,7 @@ const server = http.createServer(async (req, res) => {
     const msg = teleTriage.sendPrecautionMessage(callId, {
       sender: sender || blockchain.accounts.doctor,
       senderRole: senderRole || "doctor",
-      message: message || "Administer sublingual nitroglycerin 0.4mg. Paramedics dispatched.",
+      message: message || "Emergency notification received. Awaiting assessment by an authorized clinician.",
       actionType
     });
     return sendJSON(res, 200, { success: true, msg });

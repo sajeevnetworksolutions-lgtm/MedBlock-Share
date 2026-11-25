@@ -288,13 +288,13 @@ test('Live Application Server Full End-to-End HTTP Pipeline', async (t) => {
         callId: emergencyCallId,
         sender: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
         senderRole: 'doctor',
-        message: 'Patient presenting with acute STEMI. Administer 325mg chewable aspirin immediately.',
-        actionType: 'MEDICATION_ADMINISTRATION'
+        message: 'Emergency notification received. Awaiting assessment by an authorized clinician.',
+        actionType: 'CLINICAL_ACKNOWLEDGEMENT'
       }
     });
     assert.equal(pRes.status, 200);
     assert.equal(pRes.json.success, true);
-    assert.ok(pRes.json.msg.message.includes('aspirin'));
+    assert.ok(pRes.json.msg.message.includes('Awaiting assessment'));
 
     // 4. Terminate Call cleanly
     const termRes = await httpRequest({

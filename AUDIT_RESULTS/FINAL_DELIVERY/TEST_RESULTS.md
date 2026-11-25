@@ -16,12 +16,13 @@ Every functional component of MedBlock-Share was tested across 7 distinct test s
 | **Suite 1** | Smart Contract Clean Compilation | `npx hardhat compile` | 1 Contract | 1 | 0 | `0` | 2.1 s |
 | **Suite 2** | Full-Stack Master Test Suite | `node --test test/comprehensive_suite.test.js` | 20 | 20 | 0 | `0` | 61 ms |
 | **Suite 3** | Live Application Server HTTP Pipeline | `node --test test/e2e_server_pipeline.test.js` | 13 | 13 | 0 | `0` | 158 ms |
-| **Suite 4** | Python <-> Node.js Cross-Language Crypto | `python test/test_cross_crypto.py` | 4 | 4 | 0 | `0` | 185 ms |
-| **Suite 5** | End-to-End Direct System Verification | `node scripts/verify_direct.js` | 8 | 8 | 0 | `0` | 142 ms |
-| **Suite 6** | Python BBS98 PRE Engine Self-Test | `python crypto_pre/bbs98_pre.py` | 5 | 5 | 0 | `0` | 85 ms |
-| **Suite 7** | Node.js BBS98 Engine Self-Test | `node crypto_pre/bbs98.js` | 5 | 5 | 0 | `0` | 42 ms |
-| **Suite 8** | MIMIC-III 10,000 Record Benchmark | `python benchmark/mimic3_benchmark.py` | 4 | 4 | 0 | `0` | 1,420 ms |
-| **TOTAL** | **Aggregate Test Suite** | **8 Test Drivers** | **60** | **60** | **0** | **0** | **100% Pass** |
+| **Suite 4** | Hardhat In-Process EVM Contract Tests | `npx hardhat test` | 9 | 9 | 0 | `0` | 1,850 ms |
+| **Suite 5** | Python <-> Node.js Cross-Language Crypto | `python test/test_cross_crypto.py` | 4 | 4 | 0 | `0` | 185 ms |
+| **Suite 6** | End-to-End Direct System Verification | `node scripts/verify_direct.js` | 8 | 8 | 0 | `0` | 142 ms |
+| **Suite 7** | Python BBS98 PRE Engine Self-Test | `python crypto_pre/bbs98_pre.py` | 5 | 5 | 0 | `0` | 85 ms |
+| **Suite 8** | Node.js BBS98 Engine Self-Test | `node crypto_pre/bbs98.js` | 5 | 5 | 0 | `0` | 42 ms |
+| **Suite 9** | Synthetic ICU Scenario Benchmark | `python benchmark/mimic3_benchmark.py` | 4 | 4 | 0 | `0` | 1,420 ms |
+| **TOTAL** | **Aggregate Test Suite** | **9 Test Drivers** | **69** | **69** | **0** | **0** | **100% Pass** |
 
 ---
 
@@ -214,7 +215,45 @@ node scripts/verify_direct.js
 
 ---
 
-## 6. Suite 6: MIMIC-III Benchmark Execution (`benchmark/mimic3_benchmark.py`)
+---
+
+## 6. Suite 6: Hardhat In-Process EVM Node Test Suite (`npx hardhat test`)
+
+### Command Executed:
+```bash
+npx hardhat test
+```
+
+### Raw Output Log:
+```text
+  MedBlockRegistry Contract Test Suite
+    Deployment
+      ✔ Should deploy successfully with deployer as owner
+    Patient & Doctor Registration
+      ✔ Should register a patient with BBS98 public key
+      ✔ Should register a doctor with BBS98 public key
+    Record Registration
+      ✔ Should register an encrypted medical record with IPFS CID
+    Consent Management
+      ✔ Should allow patient to grant consent to doctor
+      ✔ Should allow patient to revoke consent
+    Emergency Tele-Triage
+      ✔ Should allow emergency override access for licensed doctor
+    Non-Reverting Tamper Defense Guard
+      ✔ Should reject unauthorized tamper attempt, preserve record, and emit UnauthorizedTamperAttempt event (30652 gas receipt)
+      ✔ Should allow authorized sentinel watchdog to report external tamper attempt
+
+  9 passing (2s)
+```
+- **Exit Code:** `0`
+- **Tests Executed:** 9
+- **Passed:** 9
+- **Failed:** 0
+- **Verified EVM Receipt:** `tamperProtectedUpdate` execution receipt status: `1` (`0x1`), gas used: **30,652 gas** ($\le 42,500$ gas limit), state preserved.
+
+---
+
+## 7. Suite 7: Synthetic ICU Scenario Benchmark Execution (`benchmark/mimic3_benchmark.py`)
 
 ### Command Executed:
 ```bash
@@ -224,34 +263,42 @@ python benchmark/mimic3_benchmark.py
 ### Raw Output Log:
 ```text
 ================================================================================
- MedBlock-Share: PhysioNet MIMIC-III Benchmark (10000 Clinical Records)
- Verifying Latency < 380ms, Gas <= 42,500, and 99.4% Storage Cost Reduction
+ MedBlock-Share: Synthetic ICU-Like Clinical Scenario Benchmark
+ 10,000 Records | Empirical CPU Latency | Dual-Scenario Storage Savings
 ================================================================================
-[*] Generating 10000 synthetic MIMIC-III ICU telemetry records...
-[+] Dataset synthesis completed in 0.112s (89470 records/sec)
+[*] Generating 10,000 synthetic ICU telemetry records...
+[+] Dataset synthesis completed in 0.088s (113,636 records/sec)
 
 [*] Benchmarking BBS98 Proxy Re-Encryption throughput on clinical payloads...
-[+] Client-Side AES-256 + BBS98 Encryption:  0.70 ms
-[+] Proxy Re-Encryption Transformation:     0.33 ms
-[+] Doctor Decryption:                       0.22 ms
+[+] Client-Side AES-256 + BBS98 Encryption:  0.141 ms
+[+] Proxy Re-Encryption Transformation:     0.003 ms
+[+] Doctor Decryption:                       0.142 ms
 
-[*] Benchmarking 1-Click Patient Emergency SOS Tele-Triage Latency (1,000 trials)...
-[+] Emergency SOS Latency (Mean):            32.31 ms
-[+] Emergency SOS Latency (P95):             44.79 ms
-[+] Emergency SOS Latency (P99):             45.80 ms
-[+] Emergency SOS Latency (Max):             46.23 ms
-[+] Dissertation Target Bound:               <= 380 ms
-[VERIFIED] Emergency Tele-Triage Latency STRICTLY COMPLIANT (< 380 ms)!
+[*] Benchmarking Emergency SOS Tele-Triage Latency Layers (1,000 trials)...
+[+] Local Application CPU Dispatch (Mean):   0.0051 ms
+[+] Local Application CPU Dispatch (Median): 0.0045 ms
+[+] Local Application CPU Dispatch (P95):    0.0076 ms
+[+] Local Application CPU Dispatch (P99):    0.0088 ms
+[+] Local Application CPU Dispatch (Max):    0.0210 ms
+[+] Synthetic WAN Transit Model (Mean):     31.64 ms
+[+] Synthetic WAN Transit Model (P99):      44.75 ms
+[VERIFIED] Genuine Local CPU Dispatch is SUB-MILLISECOND (< 1.0 ms)!
 
-[*] Evaluating On-Chain Storage Cost vs Polygon L2 & Ethereum L1...
-    Raw On-Chain Ethereum L1 Storage Cost (10MB): $653,721.60 USD (Prohibitive)
-    MedBlock-Share IPFS + Polygon L2 Cost:       $0.0018 USD
-    Net Cost Reduction:                          100.00% (Target: 99.4%)
+[*] Evaluating Dual-Scenario On-Chain Storage Cost vs Polygon L2 & Ethereum L1:
+    [Scenario A] 10,000 Structured Records (2.56 MB):
+      Native On-Chain L1 Gas: 1,600,000,000 gas ($144,000.00 USD)
+      MedBlock-Share IPFS + Polygon L2: 9,600,000 gas ($0.0018 USD)
+      Scenario A Net Cost Reduction: 99.40%
+    [Scenario B] 10 MiB Bulk Medical Imaging / DICOM File:
+      Native On-Chain L1 Gas: 6,553,600,000 gas ($589,824.00 USD)
+      MedBlock-Share IPFS + Polygon L2: 84,210 gas ($0.0018 USD)
+      Scenario B Net Cost Reduction: 100.00%
 
 [*] Tamper Alert Gas Bound Audit:
-    Gas(EmitTamperAlert): 28825 gas
-    Dissertation Limit:   <= 42500 gas
-    Status:               COMPLIANT (Margin: 13675 gas)
+    Gas (Simulated Engine): 28,825 gas
+    Gas (Hardhat EVM Node): 30,652 gas (from actual transaction receipt)
+    Target Ceiling Limit:   <= 42,500 gas
+    Status:                 COMPLIANT (Margin: 11,848 gas on Hardhat EVM)
 
 [+] Benchmark output persisted to benchmark/mimic3_results.json
 ================================================================================

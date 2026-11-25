@@ -1,7 +1,15 @@
 /**
- * MedBlock-Share: Decentralized IPFS Storage Node Adapter
- * Objective 1: Storing AES-256-GCM encrypted medical files on IPFS and CIDs on Ethereum
- * Computes deterministic IPFS CIDv0 (base58 multihash: sha256 + 0x1220 prefix)
+ * MedBlock-Share: Local Content-Addressed Storage Adapter (Development / IPFS Emulation)
+ *
+ * SCOPE & VERIFICATION STATUS:
+ *   - Computes deterministic, standard-compliant IPFS CIDv0 multihashes: Base58(0x12, 0x20, SHA256(data))
+ *   - Stores encrypted AES-256-GCM chunks on the local filesystem for offline development and testing.
+ *   - PRODUCTION UPGRADE: To connect a live distributed IPFS node (Kubo daemon) or remote pinning
+ *     service (e.g., Pinata, Infura, web3.storage), configure IPFS_GATEWAY_URL and POST chunks to
+ *     `/api/v0/add?pin=true`.
+ *   - LIMITATION: Multi-node decentralized pinning is not verified by this local adapter. Local
+ *     unpinning or file deletion does not guarantee removal from third-party IPFS swarm peers that
+ *     may have cached or replicated the ciphertext multihash.
  */
 
 const crypto = require('crypto');
