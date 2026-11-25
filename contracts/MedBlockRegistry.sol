@@ -285,7 +285,7 @@ contract MedBlockRegistry {
     function dispatchEmergencySOS(
         address doctor,
         string calldata telemetryCID,
-        bytes32 vitalsHash,
+        bytes32 /* vitalsHash */,
         string calldata acuteSeverity
     ) external {
         require(doctor != address(0), "Invalid doctor address");
@@ -314,9 +314,9 @@ contract MedBlockRegistry {
         bytes calldata attackPayload,
         bytes calldata signature
     ) external returns (bool success) {
-        MedicalRecord storage r = records[recordId];
-        if (r.patient == address(0)) revert RecordNotFound(recordId);
-        if (r.isFrozen) revert RecordIsQuarantined(recordId);
+        address patient = records[recordId].patient;
+        if (patient == address(0)) revert RecordNotFound(recordId);
+        if (records[recordId].isFrozen) revert RecordIsQuarantined(recordId);
 
         // Verify cryptographic signature: Audit(H_CID, sigma)
         bytes32 messageHash = keccak256(
@@ -326,16 +326,14 @@ contract MedBlockRegistry {
             )
         );
 
-        address recoveredSigner = recoverSigner(messageHash, signature);
-
         // Tamper condition: caller is NOT owner OR signature does not match owner
-        if (msg.sender != r.patient || recoveredSigner != r.patient) {
+        if (msg.sender != patient || recoverSigner(messageHash, signature) != patient) {
             recordTamperCount[recordId]++;
 
             // Emit persistent on-chain security alert
             emit UnauthorizedTamperAttempt(
                 msg.sender,
-                r.patient,
+                patient,
                 recordId,
                 block.timestamp,
                 proxyGatewayIP,
@@ -348,9 +346,9 @@ contract MedBlockRegistry {
         }
 
         // Valid owner update
-        r.ipfsCID = newCID;
-        r.dataHash = newDataHash;
-        r.lastModified = block.timestamp;
+        records[recordId].ipfsCID = newCID;
+        records[recordId].dataHash = newDataHash;
+        records[recordId].lastModified = block.timestamp;
         return true;
     }
 

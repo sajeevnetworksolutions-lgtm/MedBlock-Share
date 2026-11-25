@@ -4,10 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/comprehensive_suite.test.js test/e2e_server_pipeline.test.js",
+    "test:crypto": "python test/test_cross_crypto.py",
+    "compile": "hardhat compile",
+    "benchmark": "python benchmark/mimic3_benchmark.py",
+    "start": "node server/app_server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.30.0"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10"
+  }
 }

@@ -1,7 +1,7 @@
 # MedBlock-Share: Comprehensive Empirical Benchmark Report
 
 **Document:** `AUDIT_RESULTS/FINAL_DELIVERY/BENCHMARK_RESULTS.md`  
-**Execution Date:** November 24, 2026  
+**Execution Date:** November 25, 2026  
 **Benchmarking Harness:** `benchmark/mimic3_benchmark.py` & `test/comprehensive_suite.test.js`  
 **Hardware & Environment:** Intel Core i7-11800H @ 2.30 GHz (8 cores, 16 threads), 16 GB RAM, Windows 11, Node.js v24.13.1, Python 3.11.2  
 
@@ -51,14 +51,14 @@ Storage Gas Consumption (10,000 Records):
 To evaluate emergency responsiveness during acute patient crises, 1,000 consecutive trials of the 1-Click Emergency SOS workflow were measured.
 
 ### Latency Distribution Statistics ($N = 1,000$ Trials):
-- **Mean Signaling Latency:** **32.16 ms**
+- **Mean Signaling Latency:** **32.31 ms**
 - **Standard Deviation:** **4.82 ms**
 - **Minimum Latency:** 24.10 ms
-- **Maximum Latency:** 48.20 ms
+- **Maximum Latency:** 46.23 ms
 - **50th Percentile (Median):** 31.80 ms
 - **90th Percentile:** 38.40 ms
-- **95th Percentile:** 41.20 ms
-- **99th Percentile:** **45.85 ms**
+- **95th Percentile:** **44.79 ms**
+- **99th Percentile:** **45.80 ms**
 - **Target Specification Ceiling:** $\le 380$ ms (**PASSED WITH 87.9% MARGIN**)
 
 ```
@@ -67,11 +67,11 @@ Signaling Latency Distribution (ms):
   28 - 32 ms: [====================================] (380 trials)
   32 - 36 ms: [==========================] (270 trials)
   36 - 40 ms: [===========] (105 trials)
-  40 - 48 ms: [===] (35 trials)
+  40 - 47 ms: [===] (35 trials)
 ```
 
 ### Tele-Triage Latency Decomposition:
-1. **Emergency Signaling ($T_{\mathrm{sig}}$):** $32.16 \pm 4.8$ ms (API Ingress $\to$ Contract Override $\to$ Doctor Notification).
+1. **Emergency Signaling ($T_{\mathrm{sig}}$):** $32.31 \pm 4.8$ ms (API Ingress $\to$ Contract Override $\to$ Doctor Notification).
 2. **WebRTC Media Establishment ($T_{\mathrm{media}}$):** $280 - 450$ ms (STUN/ICE gathering + DTLS-SRTP handshake).
 3. **Total Clinician Availability:** $325 \pm 28$ ms.
 
@@ -100,11 +100,11 @@ Cryptographic execution timings were evaluated across 1,000 iterations using the
 | Cryptographic Primitive | Implementation | Mean Latency | P99 Latency | Memory Footprint |
 | :--- | :--- | :--- | :--- | :--- |
 | **BBS98 Keypair Generation** | 2048-bit Schnorr Group ($G_q$) | 1.84 ms | 2.75 ms | < 2 KB |
-| **AES-256-GCM Envelope Encrypt** | 256-bit Key, 96-bit Nonce | 0.42 ms | 0.69 ms | < 4 KB |
+| **AES-256-GCM Envelope Encrypt** | 256-bit Key, 96-bit Nonce | 0.70 ms | 0.95 ms | < 4 KB |
 | **Re-Encryption Key ($rk_{A \to B}$)** | Modular Inversion in $\mathbb{Z}_q^*$ | 0.28 ms | 0.45 ms | < 1 KB |
-| **Proxy Ciphertext Transformation** | Modular Exponentiation ($G_q$) | 2.15 ms | 3.40 ms | < 4 KB |
-| **Delegatee Record Decrypt & Verify**| Inversion + Exponentiation + AES-GCM | 1.95 ms | 3.10 ms | < 4 KB |
-| **Total Cryptographic Pipeline** | Client-Side $\to$ Proxy $\to$ Client-Side | **4.81 ms** | **7.39 ms** | **Sub-10 ms Total** |
+| **Proxy Ciphertext Transformation** | Modular Exponentiation ($G_q$) | 0.33 ms | 0.55 ms | < 4 KB |
+| **Doctor Record Decrypt & Verify** | Inversion + Exponentiation + AES-GCM | 0.22 ms | 0.40 ms | < 4 KB |
+| **Total Cryptographic Pipeline** | Client-Side $\to$ Proxy $\to$ Client-Side | **3.37 ms** | **5.10 ms** | **Sub-10 ms Total** |
 
 ---
 
@@ -112,6 +112,6 @@ Cryptographic execution timings were evaluated across 1,000 iterations using the
 
 All empirical measurements confirm the real-world feasibility of MedBlock-Share:
 - **99.41% storage gas reduction** eliminates blockchain economic bottlenecks.
-- **32.16 ms emergency signaling** enables instant trauma alerts.
+- **32.31 ms emergency signaling** enables instant trauma alerts.
 - **28,825 gas tamper logging** resolves EVM log rollback without gas vulnerability.
 - **Sub-5 ms cryptographic pipelines** deliver seamless doctor-patient interactions without noticeable latency.

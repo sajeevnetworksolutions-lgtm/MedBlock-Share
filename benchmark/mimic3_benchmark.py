@@ -99,6 +99,7 @@ def run_mimic3_benchmark(sample_size: int = 10000):
             sk_bob,
             enc["ciphertext_hex"],
             enc["nonce_hex"],
+            enc["tag_hex"],
         )
         dec_latencies.append((time.perf_counter() - t_start) * 1000)
 
@@ -221,10 +222,10 @@ def run_mimic3_benchmark(sample_size: int = 10000):
             },
             {
                 "framework": "MedBlock-Share (Ours)",
-                "emergency_response": f"< {mean_sos_latency:.1f} ms (Live WebRTC)",
-                "tamper_detection": "Instant Dual Alert",
+                "emergency_response": f"{mean_sos_latency:.1f} ms signaling (<380ms bound)",
+                "tamper_detection": "Non-Reverting Persistent Event",
                 "storage_cost_10mb": f"${polygon_l2_cost_usd:.4f} (Polygon L2)",
-                "attacker_attribution": "Full Proxy IP + Signature"
+                "attacker_attribution": "Ingress Proxy IP + ECDSA Signature (Network Topology)"
             }
         ]
     }

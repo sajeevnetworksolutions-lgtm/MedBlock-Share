@@ -1,16 +1,16 @@
 {
-  "timestamp": 1793370596,
+  "timestamp": 1795615770,
   "sample_records": 10000,
   "crypto_latencies_ms": {
-    "aes_bbs98_encryption": 0.44,
-    "proxy_re_encryption": 0.16,
-    "doctor_decryption": 0.24
+    "aes_bbs98_encryption": 0.7,
+    "proxy_re_encryption": 0.33,
+    "doctor_decryption": 0.22
   },
   "tele_triage_sos_latencies_ms": {
-    "mean": 32.16,
-    "p95": 44.54,
-    "p99": 45.85,
-    "max": 46.64,
+    "mean": 32.31,
+    "p95": 44.79,
+    "p99": 45.8,
+    "max": 46.23,
     "target_bound": 380,
     "compliant": true
   },
@@ -48,10 +48,10 @@
     },
     {
       "framework": "MedBlock-Share (Ours)",
-      "emergency_response": "< 32.2 ms (Live WebRTC)",
-      "tamper_detection": "Instant Dual Alert",
+      "emergency_response": "32.3 ms signaling (<380ms bound)",
+      "tamper_detection": "Non-Reverting Persistent Event",
       "storage_cost_10mb": "$0.0018 (Polygon L2)",
-      "attacker_attribution": "Full Proxy IP + Signature"
+      "attacker_attribution": "Ingress Proxy IP + ECDSA Signature (Network Topology)"
     }
   ]
 }

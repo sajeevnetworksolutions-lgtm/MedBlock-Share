@@ -538,19 +538,37 @@ const server = http.createServer(async (req, res) => {
   sendJSON(res, 404, { error: "Resource Not Found" });
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n================================================================`);
-  console.log(` MedBlock-Share Full-Stack System Operational!`);
-  console.log(`================================================================`);
-  console.log(` [*] Server URL:              http://localhost:${PORT}`);
-  console.log(` [*] SSE Event Stream:        http://localhost:${PORT}/api/events`);
-  console.log(` [*] Health Diagnostics:      http://localhost:${PORT}/api/health`);
-  console.log(` [*] MIMIC-III Benchmark:     http://localhost:${PORT}/api/benchmark`);
-  console.log(` [*] Patient Alice Address:   ${blockchain.accounts.patient}`);
-  console.log(` [*] Doctor Bob Address:      ${blockchain.accounts.doctor}`);
-  console.log(` [*] Attacker Eve Address:    ${blockchain.accounts.attacker}`);
-  console.log(` [*] Security Sentinel:       ${blockchain.accounts.sentinel}`);
-  console.log(`================================================================\n`);
-});
+function startServer(port = PORT, host = '127.0.0.1') {
+  return new Promise((resolve) => {
+    server.listen(port, host, () => {
+      const actualPort = server.address().port;
+      console.log(`\n================================================================`);
+      console.log(` MedBlock-Share Full-Stack System Operational!`);
+      console.log(`================================================================`);
+      console.log(` [*] Server URL:              http://${host}:${actualPort}`);
+      console.log(` [*] SSE Event Stream:        http://${host}:${actualPort}/api/events`);
+      console.log(` [*] Health Diagnostics:      http://${host}:${actualPort}/api/health`);
+      console.log(` [*] MIMIC-III Benchmark:     http://${host}:${actualPort}/api/benchmark`);
+      console.log(` [*] Patient Alice Address:   ${blockchain.accounts.patient}`);
+      console.log(` [*] Doctor Bob Address:      ${blockchain.accounts.doctor}`);
+      console.log(` [*] Attacker Eve Address:    ${blockchain.accounts.attacker}`);
+      console.log(` [*] Security Sentinel:       ${blockchain.accounts.sentinel}`);
+      console.log(`================================================================\n`);
+      resolve(server);
+    });
+  });
+}
 
-module.exports = server;
+if (require.main === module) {
+  startServer(PORT);
+}
+
+module.exports = {
+  server,
+  startServer,
+  blockchain,
+  ipfs,
+  teleTriage,
+  prePipeline,
+  pushRelay
+};

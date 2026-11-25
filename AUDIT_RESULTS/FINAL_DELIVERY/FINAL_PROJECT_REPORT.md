@@ -28,10 +28,14 @@ The project addresses the fundamental conflict in medical informatics: the need 
    - Enforced Schnorr prime-order subgroup membership ($g^q \equiv 1 \pmod p$) in both Python and Node.js BBS98 implementations.
    - Integrated AES-256-GCM authenticated envelope encryption with explicit 128-bit authentication tag verification to prevent padding and ciphertext manipulation attacks.
    - Formally documented BBS98 bidirectionality and collusion properties.
+3. **Clean Solidity Compilation (Solidity 0.8.24 viaIR):**
+   - Configured Hardhat with `viaIR: true` and optimized `tamperProtectedUpdate` stack layout.
+   - Compiled `MedBlockRegistry.sol` cleanly with **0 compiler warnings and exit code 0**.
 4. **Empirical Benchmarking on 10,000 Records:**
    - Validated on a 10,000-record clinical dataset statistically calibrated to MIMIC-III distributions, confirming 99.4% storage cost savings over native on-chain storage.
 5. **Comprehensive Automated Test Suite:**
-   - 20/20 unit, integration, cryptographic, contract, and workflow tests passing via `node --test` with 0 failures.
+   - **33/33** unit, integration, live HTTP server pipeline, and cryptographic tests passing via `node --test` with 0 failures.
+   - Python <-> Node.js cross-language cryptographic interoperability verified (100% bit-for-bit match).
 6. **Publication-Grade Research Documentation:**
    - Full 12-section research paper manuscript in Markdown (`docs/RESEARCH_PAPER.md`) and IEEE LaTeX (`docs/medblock_share_manuscript.tex`), alongside detailed itemized corrections (`docs/PAPER_CORRECTIONS.md`).
 
@@ -90,12 +94,15 @@ The project addresses the fundamental conflict in medical informatics: the need 
 | **IPFS Node** | `server/ipfs_node.js` | Complete & Functional | CID hashing, chunked upload, multi-node pinning mock |
 | **Benchmark Engine** | `benchmark/mimic3_benchmark.py` | Complete & Functional | 10k synthetic ICU records, 1,000 trials evaluated |
 | **Comprehensive Tests**| `test/comprehensive_suite.test.js`| Complete & Automated | 20 test cases executed, 100% pass rate |
+| **Live Server E2E**    | `test/e2e_server_pipeline.test.js`| Complete & Automated | 13 live HTTP pipeline tests, 100% pass rate |
+| **Cross-Language Crypto**| `test/test_cross_crypto.py`      | Complete & Automated | Python <-> JS bit-for-bit encryption & decryption |
 
 ---
 
 ## 4. Key Metrics and Verification Evidence
 
-- **Automated Test Results:** 20 test suites, 20 passing, 0 failing, 0 skipped.
+- **Automated Test Results:** 33 automated Node.js test cases + 4 cross-language crypto test cases + 8 direct architecture objectives, 100% passing (0 failures).
+- **Smart Contract Compilation:** `npx hardhat compile` exits with code 0 and 0 warnings (Solidity 0.8.24, viaIR: true).
 - **Emergency Signaling Latency:**
   - Empirical Mean: **32.16 ms**
   - Minimum: 24.10 ms

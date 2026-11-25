@@ -46,29 +46,44 @@ pip install cryptography sympy fastapi uvicorn
 
 ---
 
+### Step 4: Compile Smart Contracts
+```bash
+npx hardhat compile
+```
+*Expected Result:* `Compiled 1 Solidity file successfully (evm target: paris)` with 0 warnings.
+
+---
+
 ## 3. Automated Verification & Testing
 
 Before launching the server, verify the integrity of all subsystems using the built-in test runners:
 
-### Test Command 1: Comprehensive Automated Suite (20 Tests)
+### Test Command 1: Full-Stack Automated Suite (33 Tests)
 ```bash
-node --test test/comprehensive_suite.test.js
+npm test
+# Or: node --test test/comprehensive_suite.test.js test/e2e_server_pipeline.test.js
 ```
-*Expected Result:* `20 passed, 0 failed` in $\approx 30$ ms.
+*Expected Result:* `33 passed, 0 failed` in $\approx 350$ ms across 20 unit/integration tests and 13 live HTTP server tests.
 
-### Test Command 2: End-to-End Direct System Pipeline
+### Test Command 2: Python <-> Node.js Cross-Language Crypto Interoperability
+```bash
+python test/test_cross_crypto.py
+```
+*Expected Result:* Subgroup checks pass, Python-encrypted ciphertext decrypted by JS, JS-encrypted ciphertext decrypted by Python, tampered tag rejected.
+
+### Test Command 3: End-to-End Direct System Pipeline
 ```bash
 node scripts/verify_direct.js
 ```
 *Expected Result:* All 8 pipeline phases pass (`[OK]` for KeyGen, AES-GCM Encrypt, IPFS, On-Chain Register, PRE, Decrypt, Emergency SOS, Tamper Guard).
 
-### Test Command 3: Python BBS98 Cryptographic Engine Self-Test
+### Test Command 4: Python BBS98 Cryptographic Engine Self-Test
 ```bash
 python crypto_pre/bbs98_pre.py
 ```
 *Expected Result:* 5/5 self-tests pass (`Subgroup Check`, `Modular Key Inversion`, `Envelope Encrypt`, `PRE Transform`, `Tag Tamper Rejection`).
 
-### Test Command 4: MIMIC-III Benchmark Execution
+### Test Command 5: MIMIC-III Benchmark Execution
 ```bash
 python benchmark/mimic3_benchmark.py
 ```

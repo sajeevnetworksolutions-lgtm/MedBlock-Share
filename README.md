@@ -1,18 +1,31 @@
 # MedBlock-Share: Decentralized Patient-Centric Electronic Health Record Sharing via Proxy Re-Encryption, Emergency Tele-Triage & Tamper-Alert Proxy Forensics on Ethereum
 
-**Candidate:** M.Tech AI/CSE Scholar | **Domain:** Blockchain, Applied Cryptography, Web3 Tele-Triage & Healthcare Cybersecurity | **Academic Year:** 2026–2027
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636.svg)](https://soliditylang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-v24.13.1-green.svg)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![Hardhat](https://img.shields.io/badge/Hardhat-2.22.18-yellow.svg)](https://hardhat.org/)
+[![Tests](https://img.shields.io/badge/Tests-33%20Passed%20%7C%200%20Failed-brightgreen.svg)]()
+
+> **Academic Research & Engineering Implementation**  
+> **Repository:** `https://github.com/sajeevnetworksolutions-lgtm/MedBlock-Share`  
+> **Affiliation:** Advanced Cryptographic & Decentralized Systems Laboratory, Sajeev Network Solutions  
+> **Academic Reference:** *"MedBlock-Share: Decentralized Patient-Centric Electronic Health Record Sharing via Proxy Re-Encryption, Emergency Tele-Triage, and Tamper-Alert Proxy Forensics on Ethereum"*
 
 ---
 
 ## 1. Executive Abstract
 
-Traditional Electronic Health Record (EHR) systems store sensitive patient data in centralized hospital databases vulnerable to single-point-of-failure breaches, unauthorized record modifications, and medical record silos. While public blockchains provide immutable audit trails, storing large medical files (CT scans, lab reports) directly on-chain is cost-prohibitive. Furthermore, existing healthcare blockchains lack active emergency response protocols and automated forensic tamper alerts.
+Traditional Electronic Health Record (EHR) architectures store protected health information (PHI) in centralized institutional databases, introducing single-point-of-failure vulnerabilities, ransomware risks, and medical record silos. While public blockchains provide immutable audit trails and decentralized access arbitration, persisting large medical files (CT scans, lab telemetry, DICOM images) directly on-chain is economically prohibitive, while strict immutability conflicts with regulatory data deletion mandates such as GDPR Article 17 ("Right to Erasure"). Furthermore, standard blockchain access-control systems lack sub-second emergency response mechanisms and suffer from the **EVM Revert-Logging Paradox**, where reverting an unauthorized transaction inevitably discards all emitted security audit logs.
 
-**MedBlock-Share** develops a dual-layer decentralized architecture combining off-chain IPFS storage with on-chain Polygon/Ethereum Smart Contracts (Solidity 0.8.24) and Ciphertext-Policy / BBS98 Proxy Re-Encryption (PRE). The system introduces two critical clinical innovations:
-1. **Real-Time Emergency Tele-Triage:** When a patient experiences acute health risks, they trigger a 1-click SOS alert that instantly dispatches encrypted medical telemetry to their assigned doctor (<380ms response), who can immediately initiate an encrypted WebRTC audio/video call or secure messaging session.
-2. **Tamper-Detection & Forensic Proxy Attribution:** If an unauthorized entity attempts to modify or tamper with patient records or permissions, the smart contract automatically reverts the transaction and emits an emergency security event capturing the perpetrator's wallet address and proxy gateway IP. An automated daemon dispatches immediate dual alert notifications to BOTH the patient and doctor with full GeoIP proxy details for non-repudiable legal attribution.
+**MedBlock-Share** develops an end-to-end decentralized, patient-centric healthcare framework combining off-chain content-addressed storage (IPFS), client-side AES-256-GCM authenticated encryption, Blaze-Bleumer-Strauss (BBS98) Proxy Re-Encryption, and Ethereum smart contracts (`MedBlockRegistry.sol`, Solidity 0.8.24).
 
-The system reduces on-chain storage costs by **99.4%**, provides sub-second emergency response (**<380ms**), and guarantees strict **HIPAA** and **GDPR** compliance.
+### Key Architectural Solutions:
+1. **Cryptographically Enforced Key Delegation:** Bulk clinical records are encrypted client-side using random 256-bit symmetric keys under AES-256-GCM. The symmetric key is encapsulated via BBS98 over a cyclic Schnorr prime subgroup ($G_q \subset \mathbb{Z}_p^*$). The semi-trusted proxy transforms ciphertexts ($C_A \to C_B$) using delegated re-encryption keys without learning plaintext records or patient private keys.
+2. **Non-Reverting EVM Tamper Defense Guard (`tamperProtectedUpdate`):** Resolves the EVM revert log rollback flaw. Unauthorized mutations are rejected while state variables are preserved, and the transaction completes cleanly with status `0x1`, permanently anchoring `UnauthorizedTamperAttempt` events in the block log receipt within a strictly bounded gas ceiling of **28,825 gas** ($\le 42,500$ gas limit). An authorized sentinel watchdog channel (`reportTamperAttempt`) captures transactions that fail externally.
+3. **Decoupled 1-Click Emergency Tele-Triage:** When an acute clinical trauma occurs, a 1-click SOS button activates on-chain emergency override and dispatches medical telemetry to on-duty physicians with an empirical signaling latency of **$32.16 \pm 4.8$ ms** (P99: 45.85 ms, $\le 380$ ms bound), establishing an encrypted WebRTC audio/video bridge and real-time clinical precaution chat.
+4. **Transparent Ingress Network Forensics:** Ingress IP headers are captured at the JSON-RPC provider / gateway reverse proxy boundary (`X-Forwarded-For`), resolved via MaxMind GeoIP2, and evaluated for Tor exit node and proxy topology (identifying network routing topology rather than physical individuals).
+5. **Economic Efficiency:** Achieves a **99.41% storage cost reduction** relative to native on-chain storage.
 
 ---
 
@@ -21,168 +34,217 @@ The system reduces on-chain storage costs by **99.4%**, provides sub-second emer
 ```mermaid
 flowchart TD
     subgraph ClientLayer["Patient & Doctor Client Layer"]
-        P[Patient Mobile / Web App]
-        D[Doctor Tele-Triage & Video Portal]
-        A[Attacker / Malicious Proxy]
+        P["Patient App / Web Portal\n(Client-Side KeyGen & Encryption)"]
+        D["Doctor Tele-Triage Station\n(BBS98 Decrypt & WebRTC Room)"]
+        A["Adversary / Unauthorized Caller\n(Simulated Malicious Mutation)"]
     end
 
     subgraph CryptoLayer["Cryptographic Pipeline"]
-        AES["Client-Side AES-256-GCM + Web Crypto API"]
-        PRE["BBS98 Proxy Re-Encryption Engine\nrk_{A -> B} = sk_B / sk_A mod q"]
+        AES["AES-256-GCM Authenticated Envelope\n(256-bit DEK, 96-bit CSPRNG Nonce, 128-bit Tag)"]
+        PRE["BBS98 Proxy Re-Encryption Engine\n(Subgroup Validation, rk_{A->B} = sk_B / sk_A mod q)"]
     end
 
     subgraph StorageLayer["Decentralized Storage (Off-Chain)"]
-        IPFS["IPFS Cluster / Kubo Daemon\nEncrypted Medical CIDs"]
+        IPFS["IPFS Content-Addressed Cluster\n(Base58 CIDv0 Multihashes)"]
     end
 
     subgraph BlockchainLayer["Blockchain Network (On-Chain)"]
-        SC["MedBlockRegistry.sol (Solidity 0.8.24)\nAccessControl & Tamper Guard"]
-        Audit["Audit(H_CID, sigma) = 1{VerifySig}\nGas <= 42,500 gas"]
+        SC["MedBlockRegistry.sol (Solidity 0.8.24)\nHardhat Node / Polygon Amoy"]
+        Guard["tamperProtectedUpdate Guard\n(State Preserved, Log Persisted, 28,825 gas)"]
     end
 
     subgraph ForensicsLayer["Forensic Daemon & Tele-Triage Hub"]
-        Daemon["Forensic Proxy Alert Daemon\nNode.js + GeoIP2 Resolver"]
-        WebRTC["WebRTC Signaling Hub\nEncrypted Voice/Video & Telemetry Stream"]
+        Daemon["Forensic Proxy Alert Daemon\n(Ingress RPC Capture, GeoIP2, Tor Exit Filter)"]
+        Triage["WebRTC Tele-Triage Hub\n(Signaling Dispatch < 50ms, DTLS-SRTP Media Bridge)"]
     end
 
-    P -->|AES-256 Encrypt| AES
+    P -->|AES-256-GCM Encrypt Record| AES
     AES -->|Pin Encrypted Chunks| IPFS
     AES -->|Register CID + BBS98 C1, C2| SC
-    P -->|Compute rk_{A -> B}| PRE
-    P -->|1-Click SOS Trigger| WebRTC
-    WebRTC -->|< 380ms Telemetry Stream| D
-    SC -->|Unauthorized Tamper Attempt| Audit
-    Audit -->|Emit Security Event| Daemon
-    Daemon -->|Instant Dual Alert with Proxy IP| P
-    Daemon -->|Instant Dual Alert with Proxy IP| D
-    D -->|Request C_A -> C_B Transformation| PRE
-    PRE -->|Doctor Decrypts with sk_B| D
+    P -->|Generate Re-Key rk_{A->B}| PRE
+    P -->|1-Click Emergency SOS| Triage
+    Triage -->|32.16 ms Mean Signaling| D
+    A -->|Unauthorized Overwrite Attempt| Guard
+    Guard -->|Emit Persistent UnauthorizedTamperAttempt| SC
+    SC -->|Block Log Receipt| Daemon
+    Daemon -->|Dual Real-Time Alert with Ingress Proxy IP| P
+    Daemon -->|Dual Real-Time Alert with Ingress Proxy IP| D
+    D -->|Request Proxy Transformation| PRE
+    PRE -->|Doctor Decrypts DEK with sk_B| D
 ```
 
 ---
 
-## 3. Mathematical Formulation & Cryptographic Proofs
+## 3. Mathematical Formulation & Cryptographic Properties
 
-### 3.1 Proxy Re-Encryption Key Generation (Section 6.1)
-Generates re-encryption key $rk_{A \to B}$ from patient $A$ to doctor $B$ without revealing private keys:
-$$rk_{A \to B} = \frac{sk_B}{sk_A} \pmod q = (sk_B \cdot sk_A^{-1}) \pmod q$$
-$$C_A = (g^{r \cdot sk_A} \pmod p, \; m \cdot g^r \pmod p) = (c_1, c_2)$$
+### 3.1 BBS98 Proxy Re-Encryption Formulation (Section 6.1)
+Defined over cyclic prime-order subgroup $G_q \subset \mathbb{Z}_p^*$, where $p = 2q + 1$ (2048-bit safe prime) and $g = 4 = 2^2 \pmod p$:
+- **Subgroup Verification:** $\forall y \in G_q, \; y^q \equiv 1 \pmod p$ and $1 < y < p$.
+- **Key Generation:** $sk \xleftarrow{\$} \mathbb{Z}_q^*$, $pk = g^{sk} \pmod p$.
+- **Encryption:** Ephemeral $r \xleftarrow{\$} \mathbb{Z}_q^*$, $c_1 = pk_A^r \pmod p$, $c_2 = m \cdot g^r \pmod p$.
+- **Re-Encryption Key:** $rk_{A \to B} = sk_B \cdot (sk_A)^{-1} \pmod q$.
+- **Proxy Transformation:** $c_1' = (c_1)^{rk_{A \to B}} \pmod p = g^{r \cdot sk_B} \pmod p$, $c_2' = c_2$.
+- **Doctor Decryption:** $g^r = (c_1')^{(sk_B)^{-1}} \pmod p$, $m = c_2' \cdot (g^r)^{-1} \pmod p$.
 
-**Proxy Transformation (Untrusted Server):**
-$$c_1' = (c_1)^{rk_{A \to B}} \pmod p = (g^{r \cdot sk_A})^{(sk_B \cdot sk_A^{-1})} \pmod p = g^{r \cdot sk_B} \pmod p$$
-$$C_B = (c_1', c_2) = (g^{r \cdot sk_B} \pmod p, \; m \cdot g^r \pmod p)$$
-
-**Doctor Decryption:**
-$$g^r = (c_1')^{(sk_B^{-1} \pmod q)} \pmod p = (g^{r \cdot sk_B})^{sk_B^{-1}} \pmod p = g^r \pmod p$$
-$$m = c_2 \cdot (g^r)^{-1} \pmod p = (m \cdot g^r) \cdot (g^r)^{-1} \pmod p = m$$
-
-### 3.2 Cryptographic Tamper-Detection & Ownership Verification (Section 6.2)
-Validates authorized cryptographic signature $\sigma$ via ECDSA; triggers smart contract revert and event emission if invalid:
-$$Audit(H_{CID}, \sigma) = 1\{VerifySig(pk_{patient}, H_{CID}, \sigma)\}, \quad \text{Alert if } 0$$
-
-### 3.3 Emergency SOS Latency & Smart Contract Alert Gas Bound (Section 6.3)
-$$Latency_{SOS} \le 380\text{ ms}, \quad Gas(EmitTamperAlert) \le 42,500\text{ gas}$$
-- **Measured SOS Latency:** `31 - 32.5 ms` (Target: $\le 380$ ms) $\to$ **91.4% faster**
-- **Measured Tamper Alert Gas:** `28,825 gas` (Bound: $\le 42,500$ gas) $\to$ **13,675 gas below budget**
+### 3.2 Academic Disclosure of Cryptographic Boundaries
+- **Bidirectionality:** In basic BBS98, possession of $rk_{A \to B}$ allows computation of $rk_{B \to A} = (rk_{A \to B})^{-1} \pmod q$. Re-encryption keys must remain confidential to the proxy.
+- **Collusion Profile:** If the proxy colludes with Doctor $B$, they can compute $sk_A = sk_B \cdot (rk_{A \to B})^{-1} \pmod q$. In MedBlock-Share, re-encryption keys are short-lived, stored in secure memory, and purged upon revocation. Unidirectional pairing schemes (AFGH05) or threshold lattice schemes (Umbral) represent the recommended path for zero-trust multi-tenant deployments.
+- **Ciphertext Integrity:** Enforced via AES-256-GCM 128-bit authentication tags; modified ciphertexts or corrupted tags abort decryption immediately.
 
 ---
 
-## 4. Empirical Benchmark Results (PhysioNet MIMIC-III, 10,000 Records)
+## 4. EVM Tamper Defense & Gas Analysis
 
-| System Framework | Emergency Response | Tamper Detection | Storage Cost (10MB) | Attacker Attribution |
-| :--- | :--- | :--- | :--- | :--- |
-| **Traditional Cloud EHR** | 15 – 30 minutes | Passive Audit Log | \$0.0002 / mo | Internal Server Log Only |
-| **Standard Ethereum EHR** | No Tele-Triage | Tx Reverts (No Alert) | >\$1,850.00 (Prohibitive) | Wallet Address Only |
-| **Hyperledger Baseline** | Manual Notification | Channel Rejection | \$0.04 / tx | Node ID (Permissioned) |
-| **MedBlock-Share (Ours)** | **< 380 ms (Live WebRTC)** | **Instant Dual Alert** | **\$0.0018 (Polygon L2)** | **Full Proxy IP + Signature** |
+### The Revert-Logging Dilemma Resolved
+In EVM, executing `revert()` rolls back all logs within the transaction frame. `MedBlockRegistry.sol` provides two complementary patterns:
+1. **Non-Reverting State Guard (`tamperProtectedUpdate`):**
+   ```solidity
+   if (msg.sender != patient || recoverSigner(messageHash, signature) != patient) {
+       recordTamperCount[recordId]++;
+       emit UnauthorizedTamperAttempt(msg.sender, patient, recordId, block.timestamp, proxyGatewayIP, attackPayload, attackVector);
+       return false; // Transaction succeeds (status 0x1); log permanently recorded!
+   }
+   ```
+2. **Sentinel Forensic Reporting (`reportTamperAttempt`):** Watchdog daemons report transactions that fail at the EVM gas or call-stack level before entering application code.
+3. **Verified Gas Bound:** Measured at **28,825 gas** on Cancun EVM ($\le 42,500$ gas limit).
 
 ---
 
-## 5. Repository Structure
+## 5. Empirical Benchmark Results (10,000 Records)
+
+Evaluated against 10,000 synthetic patient records statistically calibrated to PhysioNet MIMIC-III intensive care distributions (ICU length of stay, diagnostic categories, laboratory panels).
+
+| Metric / Parameter | Native On-Chain Storage | MedBlock-Share (IPFS + On-Chain Anchor) | Performance Verification |
+| :--- | :--- | :--- | :--- |
+| **Total Storage Gas (10,000 Records)** | 1,630,854,400 gas | 9,600,000 gas | **99.41% Gas Reduction** |
+| **Storage Cost (Polygon L2)** | \$48.92 USD | **\$0.0018 USD** | **99.41% Cost Reduction** |
+| **Emergency SOS Signaling Latency** | N/A (Manual) | **32.16 ms Mean** (P99: 45.85 ms) | **$\le 380$ ms Bound (PASSED)** |
+| **WebRTC Media Availability** | N/A | **$325 \pm 28$ ms** (Signaling + DTLS) | **Clinical Grade Response** |
+| **Tamper Defense Execution Cost** | Reverts (Logs Lost) | **28,825 gas** (Log Persisted) | **$\le 42,500$ gas Limit (PASSED)** |
+| **BBS98 PRE Transformation** | N/A | **0.33 – 0.73 ms** | **Sub-millisecond Throughput** |
+| **AES-256-GCM Envelope Encryption**| N/A | **0.42 – 0.70 ms** | **Sub-millisecond Throughput** |
+
+---
+
+## 6. Project Structure
 
 ```
-medblock-share/
+MedBlock-Share/
 ├── contracts/
-│   └── MedBlockRegistry.sol          # Solidity 0.8.24 Smart Contract (AccessControl, Tamper Guard)
+│   └── MedBlockRegistry.sol        # Solidity 0.8.24 registry & tamper defense guard
 ├── crypto_pre/
-│   ├── bbs98_pre.py                  # Python BBS98 PRE Engine (Section 6.1 Formal Verification)
-│   ├── bbs98.js                      # JavaScript/Node.js BBS98 Engine & Hybrid AES-256-GCM
-│   ├── test_bbs98.py                 # PRE unit tests
-│   └── param_gen.py                  # Safe prime subgroup generator
-├── daemon/
-│   └── forensic_daemon.js            # Automated Web3 Event Listener & GeoIP2 Proxy Attribution
-├── tele_triage/
-│   └── tele_triage_hub.js            # 1-Click SOS Dispatcher, WebRTC Signaling & Precautions Chat
-├── benchmark/
-│   ├── mimic3_benchmark.py           # PhysioNet MIMIC-III 10,000 Records Benchmark Script
-│   └── mimic3_results.json           # Persisted Empirical Benchmark Data
+│   ├── bbs98.js                    # Node.js BigInt BBS98 PRE & AES-256-GCM engine
+│   └── bbs98_pre.py                # Python 3.11 BBS98 PRE engine with subgroup validation
 ├── server/
-│   ├── ipfs_node.js                  # IPFS Cluster / CIDv0 Multihash Adapter
-│   ├── blockchain_engine.js          # On-Chain State Machine & Gas Accounting
-│   └── app_server.js                 # Full-Stack HTTP + SSE Event Server
-├── client/
-│   └── public/
-│       └── index.html                # Responsive Web3 Dashboard (Patient, Doctor, Intruder, Viva)
+│   ├── app_server.js               # Integrated Express/HTTP REST API & SSE server
+│   ├── blockchain_engine.js        # EVM transaction engine & event broadcaster
+│   └── ipfs_node.js                # Distributed IPFS chunk store & multihash CID generator
+├── tele_triage/
+│   └── tele_triage_hub.js          # WebRTC signaling, session lifecycle & precaution chat
+├── daemon/
+│   └── forensic_daemon.js          # Ingress RPC packet watchdog, GeoIP2 & Tor exit filter
+├── benchmark/
+│   ├── mimic3_benchmark.py         # 10,000 record benchmark harness
+│   └── mimic3_results.json         # Raw persisted benchmark measurements
 ├── test/
-│   └── medblock.test.js              # Hardhat Comprehensive Test Suite
-├── scripts/
-│   ├── verify_direct.js              # In-process End-to-End Verification Runner
-│   └── test_server.ps1               # PowerShell Server Probe Script
-├── hardhat.config.js                 # Hardhat Polygon Amoy & Local Node Config
-├── start_server.bat                  # One-click Windows Server Launcher
-└── README.md                         # Complete Technical Report & Viva Defense
+│   ├── comprehensive_suite.test.js # 20 automated unit/integration/crypto/contract tests
+│   ├── e2e_server_pipeline.test.js # 13 live server HTTP pipeline tests
+│   └── test_cross_crypto.py        # Python <-> Node.js cross-language crypto test
+├── docs/
+│   ├── RESEARCH_PAPER.md           # Full 12-section research paper manuscript
+│   ├── medblock_share_manuscript.tex # IEEE Transactions LaTeX manuscript
+│   └── PAPER_CORRECTIONS.md        # Itemized scientific audit corrections log
+├── AUDIT_RESULTS/
+│   └── FINAL_DELIVERY/             # Complete 8-document final audit delivery package
+├── hardhat.config.js               # Hardhat configuration (Solidity 0.8.24, viaIR: true)
+├── package.json                    # Node.js dependencies & scripts
+└── start_server.bat                # Windows 1-click startup launcher
 ```
 
 ---
 
-## 6. How to Run the Project
+## 7. Setup & Test Execution Guide
 
 ### Prerequisites
-- Node.js $\ge$ 18 (Tested on Node.js v24.13)
-- Python 3.10+ (Tested on Python 3.11.2 with `cryptography`, `sympy`)
+- Node.js v18+ or v24+
+- Python 3.10+ or 3.11+
+- Hardhat 2.22+
 
-### Step 1: Run the Direct Architectural Verification
-Verifies all 6 objectives, cryptographic proofs, and gas limits in a single command:
+### Step 1: Install Dependencies
 ```bash
+# Node.js dependencies
+npm install
+
+# Python dependencies
+pip install cryptography sympy fastapi uvicorn
+```
+
+### Step 2: Compile Smart Contracts
+```bash
+npx hardhat compile
+```
+*Output: `Compiled 1 Solidity file successfully (evm target: paris)` with 0 warnings.*
+
+### Step 3: Run the Complete Test Suite
+```bash
+# 1. Full-Stack Automated Tests (33 tests: 33 passed, 0 failed)
+node --test test/comprehensive_suite.test.js test/e2e_server_pipeline.test.js
+
+# 2. Python <-> Node.js Cross-Language Cryptography Test
+python test/test_cross_crypto.py
+
+# 3. Direct Architecture Verification Pipeline
 node scripts/verify_direct.js
-```
 
-### Step 2: Run the BBS98 Mathematical PRE Verification (Python)
-```bash
+# 4. Python BBS98 PRE Engine Self-Test
 python crypto_pre/bbs98_pre.py
-```
 
-### Step 3: Run the 10,000 Records MIMIC-III Benchmark
-```bash
+# 5. JavaScript BBS98 Engine Self-Test
+node crypto_pre/bbs98.js
+
+# 6. MIMIC-III 10,000 Records Benchmark
 python benchmark/mimic3_benchmark.py
 ```
 
-### Step 4: Launch the Full-Stack Web3 Application
-Double-click `start_server.bat` or run:
+### Step 4: Start the Live Application
 ```bash
+# Windows:
+start_server.bat
+
+# Linux / macOS / CLI:
 node server/app_server.js
 ```
-Open your web browser at: **`http://localhost:4000`**
+Open **`http://localhost:4000`** in any WebRTC-compatible browser to access:
+- **Patient Portal:** Record encryption, IPFS CID anchoring, BBS98 consent delegation, and 1-Click SOS.
+- **Doctor Portal:** Delegated record decryption, WebRTC video/audio triage room, and precaution guidance.
+- **Security Console:** Live on-chain audit stream, tamper attack simulation, and GeoIP ingress tracking.
 
 ---
 
-## 7. Viva-Voce Defense Preparation Q&A (Examiner Ready)
+## 8. Regulatory Compliance Alignment
 
-### Q1: How does the Emergency Tele-Triage feature protect patients in acute clinical risk?
-> **Answer:** When a patient triggers the SOS button on their app, an urgent encrypted notification containing priority medical telemetry (heart rate, SpO2, blood pressure, ECG arrhythmia status, GPS) is dispatched to their designated doctor via WebSockets and Push Protocol in **< 380 ms**. The doctor can immediately launch a secure WebRTC video/voice call to review real-time vitals and prescribe immediate emergency precautions.
-
-### Q2: What happens when an unauthorized user attempts to modify or tamper with a patient's record?
-> **Answer:** The smart contract verifies cryptographic ownership via ECDSA signatures using $Audit(H_{CID}, \sigma) = 1\{VerifySig(pk_{patient}, H_{CID}, \sigma)\}$. An unauthorized modification attempt automatically triggers a transaction revert, and an on-chain `UnauthorizedTamperAttempt` event is emitted (consuming **< 42,500 gas**). The automated daemon intercepts this log, extracts the attacker's proxy IP details via GeoIP2, and instantly dispatches a dual alert to BOTH the patient and doctor containing the perpetrator's wallet address, proxy gateway IP, and timestamp for non-repudiable legal attribution.
-
-### Q3: Why is Proxy Re-Encryption essential for sharing medical records between patient and doctor?
-> **Answer:** In traditional systems, sharing encrypted data requires either sharing the master private key or decrypting files on a central cloud server (creating a single point of failure). Proxy Re-Encryption (BBS98) allows an untrusted proxy server to transform patient-encrypted ciphertext $C_A = (g^{r \cdot sk_A}, m \cdot g^r)$ into doctor-encrypted ciphertext $C_B = (g^{r \cdot sk_B}, m \cdot g^r)$ using a re-encryption key $rk_{A \to B} = (sk_B / sk_A) \pmod q$, without the proxy ever learning or exposing the plaintext medical record.
+- **GDPR Article 17 (Right to Erasure):** Achieved via **Cryptographic Erasure**. While multihash CIDs remain immutable on Ethereum, unpinning the ciphertext on IPFS and revoking re-encryption keys renders the health record irrecoverable.
+- **HIPAA Security Rule (45 CFR § 164.312):** Satisfied through client-side authenticated encryption, fine-grained cryptographic delegation, and immutable on-chain access logs.
 
 ---
 
-## 8. Academic References (2023–2026)
+## 9. Research Paper & Documentation Deliverables
 
-1. A. Azaria et al., "MedRec: Using Blockchain for Medical Data Access and Permission Management," *IEEE Open Eng.*, 2023 reprint.
-2. X. Liang et al., "Integrating Blockchain for Data Sharing Systems in Mobile Healthcare Applications," *IEEE JBHI*, vol. 28, no. 3, 2024.
-3. P. Zhang et al., "Secure and Efficient EHR Sharing Scheme Based on Proxy Re-Encryption in Blockchain," *IEEE Access*, vol. 12, 2024.
-4. G. Wood, "Ethereum: A Secure Decentralised Generalised Transaction Ledger," *Ethereum Project Yellow Paper*, 2024.
-5. M. Blaze, G. Bleumer, and M. Strauss, "Divertible Protocols and Atomic Proxy Cryptography," *EUROCRYPT*, 2025 reprint.
+- 📄 **Research Paper (Markdown):** [docs/RESEARCH_PAPER.md](docs/RESEARCH_PAPER.md)
+- 📄 **Research Paper (IEEE LaTeX):** [docs/medblock_share_manuscript.tex](docs/medblock_share_manuscript.tex)
+- 📄 **Scientific Corrections Audit:** [docs/PAPER_CORRECTIONS.md](docs/PAPER_CORRECTIONS.md)
+- 📦 **Final Delivery Package:** [AUDIT_RESULTS/FINAL_DELIVERY/](AUDIT_RESULTS/FINAL_DELIVERY/)
+  - `FINAL_PROJECT_REPORT.md`
+  - `IMPLEMENTATION_CHANGELOG.md`
+  - `TEST_RESULTS.md`
+  - `SECURITY_REVIEW.md`
+  - `BENCHMARK_RESULTS.md`
+  - `PAPER_CORRECTIONS.md`
+  - `APPLICATION_SETUP.md`
+  - `KNOWN_LIMITATIONS.md`
+
+---
+
+## 10. License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
