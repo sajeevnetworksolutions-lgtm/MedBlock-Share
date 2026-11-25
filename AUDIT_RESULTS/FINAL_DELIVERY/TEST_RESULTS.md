@@ -9,20 +9,31 @@
 
 ## 1. Executive Test Suite Summary
 
-Every functional component of MedBlock-Share was tested across 7 distinct test suites, comprising unit tests, integration tests, cryptographic edge-case tests, cross-language interoperability, live HTTP application server pipeline tests, smart contract compilation, and end-to-end workflow validations.
+Every functional component of MedBlock-Share was tested across automated test suites, smart contract compilation checks, and standalone cryptographic/system verification scripts. We clearly distinguish **actual automated test cases** from compilation tasks and standalone benchmark drivers.
 
-| Suite # | Test Suite Description | Test File / Command | Tests Executed | Passed | Failed | Exit Code | Execution Duration |
+### 1.1 Automated Test Cases (42 Total):
+| Suite # | Automated Test Suite | Test File / Command | Test Cases | Passed | Failed | Exit Code | Execution Duration |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Suite 1** | Smart Contract Clean Compilation | `npx hardhat compile` | 1 Contract | 1 | 0 | `0` | 2.1 s |
-| **Suite 2** | Full-Stack Master Test Suite | `node --test test/comprehensive_suite.test.js` | 20 | 20 | 0 | `0` | 61 ms |
-| **Suite 3** | Live Application Server HTTP Pipeline | `node --test test/e2e_server_pipeline.test.js` | 13 | 13 | 0 | `0` | 158 ms |
-| **Suite 4** | Hardhat In-Process EVM Contract Tests | `npx hardhat test` | 9 | 9 | 0 | `0` | 1,850 ms |
-| **Suite 5** | Python <-> Node.js Cross-Language Crypto | `python test/test_cross_crypto.py` | 4 | 4 | 0 | `0` | 185 ms |
-| **Suite 6** | End-to-End Direct System Verification | `node scripts/verify_direct.js` | 8 | 8 | 0 | `0` | 142 ms |
-| **Suite 7** | Python BBS98 PRE Engine Self-Test | `python crypto_pre/bbs98_pre.py` | 5 | 5 | 0 | `0` | 85 ms |
-| **Suite 8** | Node.js BBS98 Engine Self-Test | `node crypto_pre/bbs98.js` | 5 | 5 | 0 | `0` | 42 ms |
-| **Suite 9** | Synthetic ICU Scenario Benchmark | `python benchmark/mimic3_benchmark.py` | 4 | 4 | 0 | `0` | 1,420 ms |
-| **TOTAL** | **Aggregate Test Suite** | **9 Test Drivers** | **69** | **69** | **0** | **0** | **100% Pass** |
+| **Suite 1** | Full-Stack Master Test Suite | `node --test test/comprehensive_suite.test.js` | 20 | 20 | 0 | `0` | ~160 ms |
+| **Suite 2** | Live Application Server HTTP Pipeline | `node --test test/e2e_server_pipeline.test.js` | 13 | 13 | 0 | `0` | ~180 ms |
+| **Suite 3** | Hardhat In-Process EVM Contract Tests | `npx hardhat test` | 9 | 9 | 0 | `0` | ~1,850 ms |
+| **SUBTOTAL**| **Automated Test Cases** | **3 Automated Suites** | **42** | **42** | **0** | **0** | **100% Pass** |
+
+*Note: Suites 1 and 2 comprise the 33-test npm test suite (`npm test`), with Suite 3 providing 9 in-process EVM tests on Hardhat.*
+
+### 1.2 Standalone Verification & Benchmark Scripts:
+| Script | Description | Execution Command | Checks / Scope | Exit Code |
+| :--- | :--- | :--- | :---: | :---: |
+| **Cross-Language Crypto** | Python <-> Node.js PRE Interoperability | `python test/test_cross_crypto.py` | 4 round-trips | `0` |
+| **Direct System Pipeline** | End-to-End Assertion Checkpoints | `node scripts/verify_direct.js` | 11 assert checks | `0` |
+| **Python PRE Engine** | Subgroup & Inversion Self-Test | `python crypto_pre/bbs98_pre.py` | 5 module self-checks | `0` |
+| **Node.js PRE Engine** | Subgroup & Inversion Self-Test | `node crypto_pre/bbs98.js` | 5 module self-checks | `0` |
+| **Clinical Benchmark** | 10k Synthetic ICU Benchmark & 1,000 Crypto Samples | `python benchmark/mimic3_benchmark.py` | 10k records, 1k trials | `0` |
+
+### 1.3 Compilation Verification:
+| Artifact | Compiler | Command | Status |
+| :--- | :--- | :--- | :---: |
+| `MedBlockRegistry.sol` | Solidity 0.8.24 (`viaIR: true`) | `npx hardhat compile` | **Exit Code 0 (0 warnings)** |
 
 ---
 
@@ -269,30 +280,31 @@ python benchmark/mimic3_benchmark.py
 [*] Generating 10,000 synthetic ICU telemetry records...
 [+] Dataset synthesis completed in 0.088s (113,636 records/sec)
 
-[*] Benchmarking BBS98 Proxy Re-Encryption throughput on clinical payloads...
-[+] Client-Side AES-256 + BBS98 Encryption:  0.141 ms
-[+] Proxy Re-Encryption Transformation:     0.003 ms
-[+] Doctor Decryption:                       0.142 ms
+[*] Benchmarking BBS98 Proxy Re-Encryption throughput (1,000 trials)...
+[+] BBS98 Keypair Generation:                0.342 ms
+[+] Client-Side AES-256 + BBS98 Encryption:  0.773 ms
+[+] Proxy Re-Encryption Transformation:     0.510 ms
+[+] Doctor Decryption:                       0.365 ms
 
 [*] Benchmarking Emergency SOS Tele-Triage Latency Layers (1,000 trials)...
-[+] Local Application CPU Dispatch (Mean):   0.0051 ms
-[+] Local Application CPU Dispatch (Median): 0.0045 ms
-[+] Local Application CPU Dispatch (P95):    0.0076 ms
-[+] Local Application CPU Dispatch (P99):    0.0088 ms
-[+] Local Application CPU Dispatch (Max):    0.0210 ms
-[+] Synthetic WAN Transit Model (Mean):     31.64 ms
-[+] Synthetic WAN Transit Model (P99):      44.75 ms
+[+] Local Application CPU Dispatch (Mean):   0.0127 ms
+[+] Local Application CPU Dispatch (Median): 0.0108 ms
+[+] Local Application CPU Dispatch (P95):    0.0185 ms
+[+] Local Application CPU Dispatch (P99):    0.0523 ms
+[+] Local Application CPU Dispatch (Max):    0.1793 ms
+[+] Synthetic WAN Transit Model (Mean):     31.77 ms
+[+] Synthetic WAN Transit Model (P99):      44.80 ms
 [VERIFIED] Genuine Local CPU Dispatch is SUB-MILLISECOND (< 1.0 ms)!
 
 [*] Evaluating Dual-Scenario On-Chain Storage Cost vs Polygon L2 & Ethereum L1:
     [Scenario A] 10,000 Structured Records (2.56 MB):
-      Native On-Chain L1 Gas: 1,600,000,000 gas ($144,000.00 USD)
-      MedBlock-Share IPFS + Polygon L2: 9,600,000 gas ($0.0018 USD)
+      Native On-Chain Gas: 1,600,000,000 gas ($33.60 on Polygon L2, $144,000.00 USD on L1)
+      MedBlock-Share IPFS + Polygon L2: 9,600,000 gas ($0.2016 USD)
       Scenario A Net Cost Reduction: 99.40%
     [Scenario B] 10 MiB Bulk Medical Imaging / DICOM File:
-      Native On-Chain L1 Gas: 6,553,600,000 gas ($589,824.00 USD)
+      Native On-Chain Gas: 6,553,600,000 gas ($137.63 on Polygon L2, $589,824.00 USD on L1)
       MedBlock-Share IPFS + Polygon L2: 84,210 gas ($0.0018 USD)
-      Scenario B Net Cost Reduction: 100.00%
+      Scenario B Net Cost Reduction: 99.9987% (~100.00%)
 
 [*] Tamper Alert Gas Bound Audit:
     Gas (Simulated Engine): 28,825 gas

@@ -65,29 +65,36 @@ npm test
 ```
 *Expected Result:* `33 passed, 0 failed` in $\approx 350$ ms across 20 unit/integration tests and 13 live HTTP server tests.
 
-### Test Command 2: Python <-> Node.js Cross-Language Crypto Interoperability
+### Test Command 2: Hardhat EVM Smart Contract Tests (9 Tests)
+```bash
+npx hardhat test
+```
+*Expected Result:* `9 passing` on local Hardhat EVM node, validating non-reverting tamper logging with receipt gas = 30,652.
+*(Together with Command 1, a total of 42 automated test cases pass with 100% success).*
+
+### Test Command 3: Python <-> Node.js Cross-Language Crypto Interoperability
 ```bash
 python test/test_cross_crypto.py
 ```
 *Expected Result:* Subgroup checks pass, Python-encrypted ciphertext decrypted by JS, JS-encrypted ciphertext decrypted by Python, tampered tag rejected.
 
-### Test Command 3: End-to-End Direct System Pipeline
+### Test Command 4: End-to-End Direct System Pipeline (Assertion Suite)
 ```bash
 node scripts/verify_direct.js
 ```
-*Expected Result:* All 8 pipeline phases pass (`[OK]` for KeyGen, AES-GCM Encrypt, IPFS, On-Chain Register, PRE, Decrypt, Emergency SOS, Tamper Guard).
+*Expected Result:* 11 asserted operations pass (`[PASS]` for KeyGen, AES-GCM Encrypt, Simulated IPFS, On-Chain Register, PRE, Decrypt, Emergency SOS dispatch, Unauthorized Access rejection, Tamper Guard defense).
 
-### Test Command 4: Python BBS98 Cryptographic Engine Self-Test
+### Test Command 5: Python BBS98 Cryptographic Engine Self-Test
 ```bash
 python crypto_pre/bbs98_pre.py
 ```
 *Expected Result:* 5/5 self-tests pass (`Subgroup Check`, `Modular Key Inversion`, `Envelope Encrypt`, `PRE Transform`, `Tag Tamper Rejection`).
 
-### Test Command 5: MIMIC-III Benchmark Execution
+### Test Command 6: Synthetic ICU Scenario Benchmark Execution
 ```bash
 python benchmark/mimic3_benchmark.py
 ```
-*Expected Result:* Evaluates 10,000 synthetic records, verifies 99.4% gas savings, outputs results to `benchmark/mimic3_results.json`.
+*Expected Result:* Evaluates 10,000 synthetic ICU records, 1,000 PRE crypto trials, verifies 99.40% gas savings, outputs results to `benchmark/mimic3_results.json`.
 
 ---
 

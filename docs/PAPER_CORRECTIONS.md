@@ -57,14 +57,14 @@ This document details every specific correction made, contrasting the initial cl
   2. Presenting injected synthetic jitter as empirical application latency is scientifically unsound.
 * **Corrected Architecture & Implementation:**
   We formally separated the tele-triage timing layers:
-  1. **Application CPU Dispatch Latency ($T_{\mathrm{proc}}$):** Genuine local CPU execution for processing the SOS request and broadcasting events:
-     - Mean: **0.0051 ms** (5.1 microseconds)
-     - Median: **0.0045 ms**
-     - Std Dev: **0.0016 ms**
-     - P95: **0.0076 ms**
-     - P99: **0.0088 ms**
-  2. **Local Loopback HTTP Latency:** Measured over local TCP sockets at **12 - 18 ms**.
-  3. **Synthetic WAN/5G Network Transit Model:** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.64 ms mean** (P99: 44.75 ms).
+  1. **Application CPU Dispatch Latency ($T_{\mathrm{proc}}$, $N = 1,000$ Trials):** Genuine local CPU execution for processing the SOS request and broadcasting events:
+     - Mean: **0.0127 ms** (12.7 microseconds)
+     - Median: **0.0108 ms**
+     - Std Dev: **0.0099 ms**
+     - P95: **0.0185 ms**
+     - P99: **0.0523 ms**
+  2. **Local Loopback HTTP Latency ($N = 50$ Trials):** Measured over local TCP sockets at **12 - 18 ms** (Mean: 14.80 ms).
+  3. **Synthetic WAN/5G Network Transit Model ($N = 1,000$ Trials):** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.77 ms mean** (P95: 43.81 ms, P99: 44.80 ms).
   4. **WebRTC Signaling vs. Media Reality:** Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the scientific literature.
 
 ---
@@ -101,16 +101,18 @@ This document details every specific correction made, contrasting the initial cl
   The synopsis claimed a 99.4% storage cost reduction without providing transparent arithmetic, mixing small structured records with 10 MiB bulk file formulas.
 * **Corrected Architecture & Implementation:**
   We formalized two distinct, transparent scenario calculations:
-  - **Scenario A (10,000 Structured Clinical Records of ~256 Bytes):**
+  - **Scenario A (10,000 Structured Clinical Records of ~256 Bytes = 2.56 MB):**
     - Total raw data size: 2.56 MB = 80,000 32-byte EVM storage words.
-    - Native on-chain storage gas: $80,000 \times 20,000 = 1,600,000,000$ gas ($\approx \$48.00$ on Polygon L2, $\$144,000.00$ on Ethereum L1 at 30 Gwei, \$3,000/ETH).
-    - MedBlock-Share off-chain IPFS + on-chain CID anchor: $9,600,000$ gas ($\approx \$0.0018$ on Polygon L2, $\$864.00$ on Ethereum L1).
+    - Native on-chain storage gas: $80,000 \times 20,000 = 1,600,000,000$ gas ($\approx \$33.60$ on Polygon L2 at 30 Gwei, \$0.70/MATIC; $\$144,000.00$ on Ethereum L1 at 30 Gwei, \$3,000/ETH).
+    - MedBlock-Share off-chain IPFS + on-chain CID anchor: $9,600,000$ gas ($\approx \mathbf{\$0.2016}$ on Polygon L2, $\$864.00$ on Ethereum L1).
     - Gas savings: $\frac{1,600,000,000 - 9,600,000}{1,600,000,000} \times 100\% = \mathbf{99.40\%}$.
-  - **Scenario B (10 MiB Bulk Medical Imaging / DICOM File):**
+    - *Correction Note:* Previously conflated reports listed \$0.0018 for Scenario A on Polygon L2; the exact formula yields $\$0.2016$ ($9,600,000 \times 30 \times 10^{-9} \times 0.70$), while native on-chain storage is $\$33.60$ ($1,600,000,000 \times 30 \times 10^{-9} \times 0.70$).
+  - **Scenario B (10 MiB Bulk Medical Imaging / DICOM File = 10,485,760 Bytes):**
     - Total raw data size: 10,485,760 bytes = 327,680 EVM words.
-    - Native on-chain storage gas: $327,680 \times 20,000 = 6,553,600,000$ gas ($\approx \$589,824.00$ on Ethereum L1).
-    - MedBlock-Share off-chain IPFS + on-chain CID registration transaction: $84,210$ gas ($\approx \$0.0018$ on Polygon L2).
-    - Gas savings: $\mathbf{100.00\%}$ reduction.
+    - Native on-chain storage gas: $327,680 \times 20,000 = 6,553,600,000$ gas ($\approx \$137.63$ on Polygon L2, $\$589,824.00$ on Ethereum L1).
+    - MedBlock-Share off-chain IPFS + on-chain CID registration transaction: $84,210$ gas ($\approx \mathbf{\$0.0018}$ on Polygon L2, $\$7.58$ on Ethereum L1).
+    - Gas savings: $\frac{6,553,600,000 - 84,210}{6,553,600,000} \times 100\% = \mathbf{99.9987\%}$ ($\approx \mathbf{100.00\%}$).
+    - *Distinction:* Scenario B models a single large transaction anchoring an off-chain imaging payload, distinct from the aggregate 10,000 structured record batch in Scenario A. External commercial IPFS pinning fees are excluded as they depend on third-party pinning providers.
   - **Verified Tamper Defense Receipt Gas:**
     - On Hardhat in-process EVM node (`test/medblock.test.js`): **30,652 gas** with clean non-reverting status `1` (`0x1`).
     - On in-memory simulated execution engine: **28,825 gas** (well below the $\le 42,500$ gas limit).

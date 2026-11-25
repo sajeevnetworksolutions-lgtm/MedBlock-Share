@@ -83,7 +83,7 @@ This changelog records all source code files, smart contracts, test scripts, and
   - **Status:** Overhauled & Aligned
   - **Key Modifications:**
     - Renamed and restructured as Synthetic ICU-Like Clinical Scenario Benchmark (10,000 synthetic records with standard critical care physiological ranges).
-    - Removed artificial network jitter simulation; separated genuine local application CPU dispatch latency (mean: 0.0051 ms, median: 0.0045 ms, P99: 0.0088 ms) from WAN transit scenario model (mean: 31.64 ms).
+    - Removed artificial network jitter simulation; separated genuine local application CPU dispatch latency (mean: 0.0127 ms, median: 0.0108 ms, P99: 0.0523 ms) from WAN transit scenario model (mean: 31.77 ms).
     - Formalized dual storage cost models: Scenario A (10,000 structured records, 99.40% gas reduction) and Scenario B (10 MiB bulk imaging file, 100.00% reduction).
     - Logged Hardhat in-process EVM receipt gas (30,652 gas) alongside in-memory simulated gas (28,825 gas).
     - Persisted raw benchmark measurements to `benchmark/mimic3_results.json`.
@@ -122,3 +122,31 @@ This changelog records all source code files, smart contracts, test scripts, and
   - `AUDIT_RESULTS/FINAL_DELIVERY/PAPER_CORRECTIONS.md`
   - `AUDIT_RESULTS/FINAL_DELIVERY/APPLICATION_SETUP.md`
   - `AUDIT_RESULTS/FINAL_DELIVERY/KNOWN_LIMITATIONS.md`
+
+---
+
+## Final Targeted Correction Pass (Release v2.1)
+
+1. **Storage Economics Arithmetic Reconciliation:**
+   - Corrected Scenario A Polygon L2 calculation: $9,600,000 \text{ gas} \times 30 \text{ Gwei} \times \$0.70/\text{MATIC} = \mathbf{\$0.2016}$ (resolved previous conflation with Scenario B's $\$0.0018$).
+   - Corrected Native On-Chain storage costs: Scenario A is $\$33.60$ on Polygon L2 ($1.6\text{B gas}$) and $\$144,000.00$ on Ethereum L1; Scenario B is $\$137.63$ on Polygon L2 ($6.55\text{B gas}$) and $\$589,824.00$ on Ethereum L1.
+   - Distinct models: Scenario A models aggregate 10,000 clinical records (99.40% savings); Scenario B models a single 10 MiB bulk imaging registration transaction at 84,210 gas (99.9987% savings). Unmeasured external commercial IPFS pinning fees are explicitly excluded.
+
+2. **Direct Verification Harness Hardening (`scripts/verify_direct.js`):**
+   - Replaced simulated `Date.now() - 31` network latency with genuine local CPU dispatch measurement via `performance.now()`.
+   - Labeled simulated in-memory components explicitly with `[SIMULATED IN-MEMORY]` and `[SIMULATED SCENARIO]`.
+   - Added rigorous Node.js `assert` statements across all 11 operations (including `assert.throws` for unauthorized access).
+   - Enforced non-zero process exit (`process.exit(1)`) upon any operation failure.
+   - Removed uncertified "HIPAA/GDPR compliance verified" statements; replaced with academic research prototype disclaimers.
+
+3. **Cryptographic Benchmark Count Reconciliation:**
+   - Updated `crypto_sample_count = 1000` in `benchmark/mimic3_benchmark.py`.
+   - Executed genuine 1,000 trials generating empirical means, medians, and percentiles for KeyGen (0.342 ms), Encryption (0.773 ms), PRE Transformation (0.510 ms), and Decryption (0.365 ms).
+   - Regenerated `benchmark/mimic3_results.json` directly from recorded measurements.
+
+4. **Test Reporting Taxonomy Clarification:**
+   - Delineated 42 automated test cases (20 comprehensive suite + 13 live server E2E pipeline + 9 Hardhat EVM contract tests).
+   - Separated automated tests from standalone verification scripts (`verify_direct.js`, `test_cross_crypto.py`, `mimic3_benchmark.py`, BBS98 self-tests) and Solidity compilation checks.
+
+5. **Cross-Repository Documentation Harmonization:**
+   - Synchronized `README.md`, `docs/RESEARCH_PAPER.md`, `docs/medblock_share_manuscript.tex`, `docs/PAPER_CORRECTIONS.md`, and all 8 delivery files in `AUDIT_RESULTS/FINAL_DELIVERY/`.

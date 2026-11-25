@@ -34,12 +34,12 @@ Under EVM Cancun execution semantics:
 
 | Scenario | Storage Architecture | Raw Data Size | On-Chain EVM Gas | Polygon L2 Cost (\$USD) | Ethereum L1 Cost (\$USD) | Savings Ratio |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Scenario A: 10,000 Structured Records** | Native On-Chain Storage | 2.56 MB (80,000 words) | 1,600,000,000 gas | \$48.00 | \$144,000.00 | Baseline |
-| | **MedBlock-Share (IPFS + On-Chain CID)** | 2.56 MB (Off-chain) + 320 KB (CID) | 9,600,000 gas | **\$0.0018** | **\$864.00** | **99.40% Reduction** |
-| **Scenario B: 10 MiB Bulk Medical Image** | Native On-Chain Storage | 10.49 MB (327,680 words) | 6,553,600,000 gas | \$196.61 | \$589,824.00 | Baseline |
-| | **MedBlock-Share (IPFS + On-Chain CID)** | 10.49 MB (IPFS) + 32B CID | 84,210 gas | **\$0.0018** | **\$7.58** | **100.00% Reduction** |
+| **Scenario A: 10,000 Structured Records** | Native On-Chain Storage | 2.56 MB (80,000 words) | 1,600,000,000 gas | \$33.60 | \$144,000.00 | Baseline |
+| | **MedBlock-Share (IPFS + On-Chain CID)** | 2.56 MB (Off-chain) + 320 KB (CID) | 9,600,000 gas | **\$0.2016** | **\$864.00** | **99.40% Reduction** |
+| **Scenario B: 10 MiB Bulk Medical Image** | Native On-Chain Storage | 10.49 MB (327,680 words) | 6,553,600,000 gas | \$137.63 | \$589,824.00 | Baseline |
+| | **MedBlock-Share (IPFS + On-Chain CID)** | 10.49 MB (IPFS) + 32B CID | 84,210 gas | **\$0.0018** | **\$7.58** | **99.9987% ($\approx$ 100.00%) Reduction** |
 
-*Economic Assumptions: L1 Gas Price = 30 Gwei, ETH = \$3,000 USD; Polygon Gas Price = 30 Gwei, MATIC/POL = \$0.70 USD. Storage costs calculated at 20,000 gas per 32-byte EVM storage word.*
+*Economic Assumptions: L1 Gas Price = 30 Gwei, ETH = \$3,000 USD; Polygon Gas Price = 30 Gwei, MATIC/POL = \$0.70 USD. Storage costs calculated at 20,000 gas per 32-byte EVM storage word. Models reflect transaction and storage execution gas; external IPFS pinning fees are excluded as they depend on third-party commercial pinning providers.*
 
 ```
 Scenario A Storage Gas Consumption (10,000 Records):
@@ -55,13 +55,13 @@ To evaluate emergency responsiveness during acute patient crises, repeated measu
 
 ### 3.1 Latency Layer Decomposition:
 1. **Application CPU Dispatch Latency ($T_{\mathrm{proc}}$, $N = 1,000$ Trials):**
-   - **Mean:** **0.0051 ms** (5.1 microseconds)
-   - **Median:** **0.0045 ms**
-   - **Standard Deviation:** **0.0016 ms**
-   - **Minimum Latency:** 0.0036 ms
-   - **Maximum Latency:** 0.0210 ms
-   - **95th Percentile:** **0.0076 ms**
-   - **99th Percentile:** **0.0088 ms**
+   - **Mean:** **0.0127 ms** (12.7 microseconds)
+   - **Median:** **0.0108 ms**
+   - **Standard Deviation:** **0.0099 ms**
+   - **Minimum Latency:** 0.0096 ms
+   - **Maximum Latency:** 0.1793 ms
+   - **95th Percentile:** **0.0185 ms**
+   - **99th Percentile:** **0.0523 ms**
    - **Target Ceiling:** $\le 1.0$ ms (**PASSED**)
 
 2. **Local Loopback HTTP Request-Response ($N = 50$ Trials):**
@@ -72,18 +72,18 @@ To evaluate emergency responsiveness during acute patient crises, repeated measu
 
 3. **Synthetic WAN/5G Network Transit Model ($N = 1,000$ Trials):**
    - Modeled under simulated wide-area jitter (18–45 ms transit delay):
-   - **Mean:** **31.64 ms**
-   - **Median:** 31.42 ms
-   - **Standard Deviation:** 7.79 ms
-   - **95th Percentile:** 43.68 ms
-   - **99th Percentile:** 44.75 ms
+   - **Mean:** **31.77 ms**
+   - **Median:** 31.50 ms
+   - **Standard Deviation:** 7.82 ms
+   - **95th Percentile:** 43.81 ms
+   - **99th Percentile:** 44.80 ms
    - **Target Specification Ceiling:** $\le 380$ ms (**PASSED**)
 
 ```
 Emergency SOS Local CPU Dispatch Latency (1,000 Trials):
-[ 0.0036ms ] =========================== (Min)
-[ 0.0051ms ] ======================================================== (Mean: 0.0051 ms)
-[ 0.0088ms ] ================================================================= (P99: 0.0088 ms)
+[ 0.0096ms ] =========================== (Min)
+[ 0.0127ms ] ======================================================== (Mean: 0.0127 ms)
+[ 0.0523ms ] ================================================================= (P99: 0.0523 ms)
 [ 1.0000ms ] ========================================================================================= (Target Ceiling)
 ```
 
@@ -114,23 +114,23 @@ The gas consumption of the non-reverting `tamperProtectedUpdate` pattern was mea
 
 ## 5. Benchmark 4: Cryptographic Operation Performance
 
-Cryptographic execution timings were evaluated across 1,000 iterations using the Python 3.11 cryptographic engine and Node.js BBS98 engine:
+Cryptographic execution timings were evaluated across 1,000 iterations using the Python 3.11 cryptographic engine and Node.js BBS98 engine (`benchmark/mimic3_results.json`):
 
 | Cryptographic Primitive | Implementation | Mean Latency | Median Latency | P99 Latency | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BBS98 Keypair Generation** | 2048-bit Schnorr Group ($G_q$) | 0.046 ms | 0.044 ms | 0.065 ms | Sub-millisecond |
-| **AES-256-GCM Envelope Encrypt** | 256-bit Key, 96-bit Nonce | 0.141 ms | 0.138 ms | 0.180 ms | Sub-millisecond |
-| **Proxy Ciphertext Transformation** | Modular Exponentiation ($G_q$) | 0.003 ms | 0.003 ms | 0.005 ms | Sub-millisecond |
-| **Doctor Record Decrypt & Verify** | Exponentiation + AES-GCM Tag Verify | 0.142 ms | 0.139 ms | 0.185 ms | Sub-millisecond |
-| **Total Cryptographic Pipeline** | Client-Side $\to$ Proxy $\to$ Client-Side | **0.332 ms** | **0.324 ms** | **0.435 ms** | **Sub-millisecond Total** |
+| **BBS98 Keypair Generation** | 2048-bit Schnorr Group ($G_q$) | 0.342 ms | 0.255 ms | 0.835 ms | Sub-millisecond |
+| **AES-256-GCM Envelope Encrypt** | 256-bit Key, 96-bit Nonce | 0.773 ms | 0.825 ms | 1.523 ms | Sub-millisecond |
+| **Proxy Ciphertext Transformation** | Modular Exponentiation ($G_q$) | 0.510 ms | 0.556 ms | 1.002 ms | Sub-millisecond |
+| **Doctor Record Decrypt & Verify** | Exponentiation + AES-GCM Tag Verify | 0.365 ms | 0.380 ms | 0.797 ms | Sub-millisecond |
+| **Total Cryptographic Pipeline** | Client-Side $\to$ Proxy $\to$ Client-Side | **1.990 ms** | **2.016 ms** | **4.157 ms** | **High-Throughput (< 5 ms)** |
 
 ---
 
 ## 6. Benchmark Conclusion
 
 All empirical measurements confirm the technical soundness of MedBlock-Share:
-- **99.40% to 100.00% storage gas reduction** eliminates blockchain economic barriers for clinical EHRs.
-- **0.0051 ms local CPU dispatch** enables instantaneous emergency alert handling.
+- **99.40% to 99.9987% storage gas reduction** eliminates blockchain economic barriers for clinical EHRs.
+- **0.0127 ms local CPU dispatch** enables instantaneous emergency alert handling.
 - **30,652 gas tamper logging on Hardhat EVM** resolves EVM log rollback without gas vulnerability.
-- **Sub-millisecond cryptographic pipeline (0.332 ms)** delivers seamless doctor-patient interactions.
+- **Sub-millisecond individual cryptographic operations** deliver seamless doctor-patient interactions.
 - **Transparent operational disclosures** delineate simulated development adapters from production infrastructure.

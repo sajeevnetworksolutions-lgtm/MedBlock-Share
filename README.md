@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v24.13.1-green.svg)](https://nodejs.org/)
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![Hardhat](https://img.shields.io/badge/Hardhat-2.22.18-yellow.svg)](https://hardhat.org/)
-[![Tests](https://img.shields.io/badge/Tests-33%20Passed%20%7C%200%20Failed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-42%20Automated%20Tests%20Passed-brightgreen.svg)]()
 
 > **Academic Research & Engineering Implementation**  
 > **Repository:** `https://github.com/sajeevnetworksolutions-lgtm/MedBlock-Share`  
@@ -23,9 +23,9 @@ Traditional Electronic Health Record (EHR) architectures store protected health 
 ### Key Architectural Solutions:
 1. **Cryptographically Enforced Key Delegation:** Bulk clinical records are encrypted client-side using random 256-bit symmetric keys under AES-256-GCM. The symmetric key is encapsulated via BBS98 over a cyclic Schnorr prime subgroup ($G_q \subset \mathbb{Z}_p^*$). The semi-trusted proxy transforms ciphertexts ($C_A \to C_B$) using delegated re-encryption keys without learning plaintext records or patient private keys.
 2. **Non-Reverting EVM Tamper Defense Guard (`tamperProtectedUpdate`):** Resolves the EVM revert log rollback flaw. Unauthorized mutations are rejected while state variables are preserved, and the transaction completes cleanly with status `0x1`, permanently anchoring `UnauthorizedTamperAttempt` events in the block log receipt within a strictly bounded gas envelope of **30,652 gas** on Hardhat EVM receipt (**28,825 gas** in-memory simulation, $\le 42,500$ gas limit). An authorized sentinel watchdog channel (`reportTamperAttempt`) captures transactions that fail externally.
-3. **Decoupled 1-Click Emergency Tele-Triage:** When an acute clinical trauma occurs, a 1-click SOS button activates on-chain emergency override and dispatches medical telemetry to on-duty physicians with a genuine local CPU dispatch latency of **0.0051 ms mean** (median: 0.0045 ms, P99: 0.0088 ms), local loopback HTTP latency of **12–18 ms**, and simulated WAN transit of **31.64 ms mean**. WebRTC signaling and clinical guidance chat are verified; audiovisual streaming requires client browser media devices. Neutral clinical triage guidance (*"Emergency notification received. Awaiting assessment by an authorized clinician."*) is provided without automated drug prescribing.
+3. **Decoupled 1-Click Emergency Tele-Triage:** When an acute clinical trauma occurs, a 1-click SOS button activates on-chain emergency override and dispatches medical telemetry to on-duty physicians with a genuine local CPU dispatch latency of **0.0127 ms mean** (median: 0.0108 ms, P99: 0.0523 ms), local loopback HTTP latency of **12–18 ms**, and simulated WAN transit of **31.77 ms mean**. WebRTC signaling and clinical guidance chat are verified; audiovisual streaming requires client browser media devices. Neutral clinical triage guidance (*"Emergency notification received. Awaiting assessment by an authorized clinician."*) is provided without automated drug prescribing.
 4. **Transparent Ingress Network Forensics:** Ingress IP headers are captured at the JSON-RPC provider / gateway reverse proxy boundary (`X-Forwarded-For`), resolved via MaxMind GeoIP2, and evaluated for Tor exit node and proxy topology (identifying network routing topology rather than physical individuals).
-5. **Economic Efficiency:** Achieves a **99.40% storage cost reduction** in structured clinical records and **100.00% reduction** in bulk imaging files relative to native on-chain storage.
+5. **Economic Efficiency:** Achieves a **99.40% storage cost reduction** in structured clinical records (Scenario A) and **99.9987% ($\approx 100.00%$) reduction** in bulk imaging files (Scenario B) relative to native on-chain storage.
 
 ---
 
@@ -116,23 +116,24 @@ Evaluated against 10,000 synthetic patient records generated under a **Synthetic
 
 | Metric / Parameter | Native On-Chain Storage | MedBlock-Share (IPFS + On-Chain Anchor) | Performance Verification |
 | :--- | :--- | :--- | :--- |
-| **Scenario A Storage (10,000 Records, 2.56 MB)** | 1,600,000,000 gas (\$48.00 L2) | 9,600,000 gas (**\$0.0018 USD**) | **99.40% Gas Reduction** |
-| **Scenario B Storage (10 MiB Bulk Medical Image)** | 6,553,600,000 gas (\$196.61 L2)| 84,210 gas (**\$0.0018 USD**) | **100.00% Gas Reduction** |
-| **Emergency SOS Local CPU Dispatch** | N/A (Manual) | **0.0051 ms Mean** (P99: 0.0088 ms) | **Sub-millisecond ($\le 1.0$ ms)** |
+| **Scenario A Storage (10,000 Records, 2.56 MB)** | 1,600,000,000 gas (\$33.60 L2 / \$144,000 L1) | 9,600,000 gas (**\$0.2016 L2** / \$864 L1) | **99.40% Gas Reduction** |
+| **Scenario B Storage (10 MiB Bulk Medical Image)** | 6,553,600,000 gas (\$137.63 L2 / \$589,824 L1)| 84,210 gas (**\$0.0018 L2** / \$7.58 L1) | **99.9987% ($\approx$ 100.00%) Reduction** |
+| **Emergency SOS Local CPU Dispatch** | N/A (Manual) | **0.0127 ms Mean** (P99: 0.0523 ms) | **Sub-millisecond ($\le 1.0$ ms)** |
 | **Emergency SOS Local HTTP Loopback** | N/A | **14.80 ms Mean** (Median: 13.90 ms) | **$\le 50$ ms Bound (PASSED)** |
-| **Emergency SOS Simulated WAN Model** | N/A | **31.64 ms Mean** (P99: 44.75 ms) | **$\le 380$ ms Bound (PASSED)** |
+| **Emergency SOS Simulated WAN Model** | N/A | **31.77 ms Mean** (P99: 44.80 ms) | **$\le 380$ ms Bound (PASSED)** |
 | **Tamper Defense Cost (Hardhat EVM Receipt)**| Reverts (Logs Lost) | **30,652 gas** (`receipt.status === 1`)| **$\le 42,500$ gas Limit (PASSED)** |
 | **Tamper Defense Cost (Simulated Engine)** | Reverts (Logs Lost) | **28,825 gas** (Log Persisted) | **$\le 42,500$ gas Limit (PASSED)** |
-| **AES-256-GCM Envelope Encryption**| N/A | **0.141 ms Mean** (P99: 0.180 ms) | **Sub-millisecond Throughput** |
-| **BBS98 PRE Key Generation** | N/A | **0.046 ms Mean** (P99: 0.065 ms) | **Sub-millisecond Throughput** |
-| **BBS98 PRE Transformation** | N/A | **0.003 ms Mean** (P99: 0.005 ms) | **Sub-millisecond Throughput** |
-| **Delegatee AES-GCM Decryption** | N/A | **0.142 ms Mean** (P99: 0.185 ms) | **Sub-millisecond Throughput** |
+| **BBS98 PRE Key Generation (1,000 Trials)** | N/A | **0.342 ms Mean** (P99: 0.835 ms) | **Sub-millisecond Throughput** |
+| **AES-256-GCM Envelope Encryption (1,000 Trials)**| N/A | **0.773 ms Mean** (P99: 1.523 ms) | **Sub-millisecond Throughput** |
+| **BBS98 PRE Transformation (1,000 Trials)** | N/A | **0.510 ms Mean** (P99: 1.002 ms) | **Sub-millisecond Throughput** |
+| **Delegatee AES-GCM Decryption (1,000 Trials)** | N/A | **0.365 ms Mean** (P99: 0.797 ms) | **Sub-millisecond Throughput** |
 
 > **Operational Disclosures & Boundaries:**
+> - **Storage Cost Assumptions:** Calculated at 30 Gwei gas price, $3,000/ETH, and $0.70/MATIC (POL). Storage gas is modeled under EVM SSTORE semantics (20,000 gas per 32-byte word). These figures represent theoretical cost models and do not include unmeasured third-party IPFS pinning fees.
 > - **WebRTC Media Boundary:** The backend and test suite verify the WebRTC signaling handshake, session lifecycle, and clinical text precaution channel. Physical peer-to-peer audiovisual streaming requires client capture hardware and STUN/TURN traversal servers (unverified in headless server tests).
 > - **IPFS Adapter:** `server/ipfs_node.js` provides local content-addressed storage for development; production deployments integrate with Kubo or Pinata.
 > - **Cryptographic Model:** BBS98 is bidirectional and vulnerable to delegatee-proxy collusion. Re-encryption keys are short-lived and access-controlled. Algebraic test verification does not constitute a formal reductionist security proof.
-> - **Clinical Safety:** All demonstration records are synthetic. Emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). Autonomous drug prescribing is strictly avoided. This software is an academic research prototype and not a certified medical device.
+> - **Clinical Safety:** All demonstration records are synthetic. Emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). Autonomous drug prescribing is strictly avoided. This software is an academic research prototype and not certified as a medical device.
 
 ---
 

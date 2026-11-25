@@ -62,9 +62,9 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ### 5.1 Signaling Latency vs. End-to-End Media Establishment
 * **Measurement Reality:** The tele-triage workflow separates local CPU processing, local HTTP transport, and client audiovisual media establishment:
-  1. **Local Application CPU Dispatch:** Empirically measured at **$0.0051 \pm 0.0016$ ms** (median: 0.0045 ms, P99: 0.0088 ms).
-  2. **Local Loopback HTTP Request-Response:** Measured over local TCP sockets at **$12 - 18$ ms**.
-  3. **Synthetic WAN/5G Network Transit Model:** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.64 ms mean** (P99: 44.75 ms).
+  1. **Local Application CPU Dispatch:** Empirically measured at **$0.0127 \pm 0.0099$ ms** (median: 0.0108 ms, P95: 0.0185 ms, P99: 0.0523 ms).
+  2. **Local Loopback HTTP Request-Response:** Measured over local TCP sockets at **$12 - 18$ ms** (mean: 14.80 ms).
+  3. **Synthetic WAN/5G Network Transit Model:** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.77 ms mean** (P95: 43.81 ms, P99: 44.80 ms).
 * **WebRTC Media Streaming Boundary:** Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the academic literature.
 * **Clinical Safety & Non-Prescriptive Status:** MedBlock-Share provides automated triage notification and communication signaling, never automated medical prescriptions (e.g., nitroglycerin, aspirin). All emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). All patient records in demonstrations and benchmarks are synthetic data. This software is an academic research prototype and not a certified medical device.
 
@@ -81,8 +81,8 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 ## 7. Storage Cost, IPFS Adapter & EVM Tamper Defense Gas
 
 ### 7.1 Dual Storage Scenarios
-- **Scenario A (10,000 Structured Records of ~256 Bytes):** 1,600,000,000 gas on-chain vs 9,600,000 gas MedBlock-Share $\to$ **99.40% gas reduction**.
-- **Scenario B (10 MiB Bulk Medical Imaging File):** 6,553,600,000 gas on-chain vs 84,210 gas Polygon L2 CID anchor $\to$ **100.00% gas reduction**.
+- **Scenario A (10,000 Structured Records of ~256 Bytes = 2.56 MB):** 1,600,000,000 gas on-chain ($33.60 on Polygon L2, $144,000 on Ethereum L1) vs 9,600,000 gas MedBlock-Share anchor ($0.2016 on Polygon L2, $864 on Ethereum L1) $\to$ **99.40% gas reduction**.
+- **Scenario B (10 MiB Bulk Medical Imaging File):** 6,553,600,000 gas on-chain ($137.63 on Polygon L2, $589,824 on Ethereum L1) vs 84,210 gas Polygon L2 CID anchor ($0.0018 on Polygon L2, $7.58 on Ethereum L1) $\to$ **99.9987% ($\approx$ 100.00%) gas reduction**. External commercial IPFS pinning fees are not modeled as they depend on third-party pinning providers.
 
 ### 7.2 IPFS Adapter Scope
 - `server/ipfs_node.js` provides a local content-addressed storage adapter (IPFS emulation for development).

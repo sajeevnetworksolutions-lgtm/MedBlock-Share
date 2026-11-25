@@ -15,9 +15,9 @@ Modern healthcare delivery requires seamless, fine-grained cross-institutional E
 In this paper, we present **MedBlock-Share**, an end-to-end decentralized patient-centric EHR sharing framework built upon Ethereum smart contracts, InterPlanetary File System (IPFS) content-addressed distributed storage, and Blaze-Bleumer-Strauss (BBS98) Proxy Re-Encryption (PRE) integrated with an AES-256-GCM authenticated envelope. MedBlock-Share introduces three primary technical contributions:
 1. **Cryptographically Enforced Delegation:** A hybrid cryptographic architecture wherein 256-bit symmetric record payload keys are transformed under delegated proxy re-encryption keys, ensuring neither storage nodes nor the re-encryption proxy observe plaintext health records.
 2. **EVM Non-Reverting Tamper Defense Guard:** A sound smart contract architecture resolving the fundamental Ethereum Virtual Machine (EVM) paradox where an unauthorized state transaction that reverts (`REVERT`) rolls back all associated event logs. Our dual-channel defense employs a non-reverting state rejection guard (`tamperProtectedUpdate`) that preserves persistent on-chain `UnauthorizedTamperAttempt` security logs within a strictly bounded gas envelope ($\le 42,500$ gas), coupled with an authorized sentinel watchdog channel (`reportTamperAttempt`).
-3. **Decoupled Low-Latency Emergency Tele-Triage:** A 1-Click emergency override workflow providing instant on-chain consent elevation, sub-millisecond local CPU dispatch (0.0051 ms mean), and robust WebRTC signaling session lifecycle management and clinical precaution guidance.
+3. **Decoupled Low-Latency Emergency Tele-Triage:** A 1-Click emergency override workflow providing instant on-chain consent elevation, sub-millisecond local CPU dispatch (0.0127 ms mean), and robust WebRTC signaling session lifecycle management and clinical precaution guidance.
 
-We provide a rigorous empirical evaluation using a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark (calibrated against standard physiological ranges for vitals, SpO2, heart rate, and blood pressure without ingesting or exposing restricted patient data). Results demonstrate a **99.40% gas reduction** in structured clinical record scenarios (and **100.00% reduction** in bulk imaging scenarios), genuine sub-millisecond local application processing latency (0.0051 ms CPU dispatch mean), a verified non-reverting tamper defense gas cost of **30,652 gas** on Hardhat EVM (28,825 gas in-memory simulation), and sub-millisecond cryptographic operations. Furthermore, we provide a transparent cryptographic and forensic boundary analysis, articulating the bidirectional and collusion characteristics of the foundational BBS98 scheme, distinguishing WebRTC signaling from physical audiovisual streaming in headless test environments, and establishing that network-level IP attribution identifies ingress topology rather than physical individuals.
+We provide a rigorous empirical evaluation using a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark (calibrated against standard physiological ranges for vitals, SpO2, heart rate, and blood pressure without ingesting or exposing restricted patient data). Results demonstrate a **99.40% gas reduction** in structured clinical record scenarios (and **99.9987% reduction** in bulk imaging scenarios), genuine sub-millisecond local application processing latency (0.0127 ms CPU dispatch mean), a verified non-reverting tamper defense gas cost of **30,652 gas** on Hardhat EVM (28,825 gas in-memory simulation), and sub-millisecond cryptographic operations. Furthermore, we provide a transparent cryptographic and forensic boundary analysis, articulating the bidirectional and collusion characteristics of the foundational BBS98 scheme, distinguishing WebRTC signaling from physical audiovisual streaming in headless test environments, and establishing that network-level IP attribution identifies ingress topology rather than physical individuals.
 
 **Keywords:** Electronic Health Records, Proxy Re-Encryption, BBS98, Ethereum Smart Contracts, InterPlanetary File System (IPFS), WebRTC Tele-Triage, Smart Contract Forensics, EVM Event Persistence.
 
@@ -263,9 +263,9 @@ In acute medical crises, treatment delays correlate directly with patient mortal
 |          |        - Bypasses static consent queue for verified responders          |
 |          |                                                                        |
 |          +---> 2. WebSockets / SSE Dispatch to On-Duty Physicians                 |
-|          |        - CPU Dispatch Latency: 0.0051 ms mean (empirically measured)   |
+|          |        - CPU Dispatch Latency: 0.0127 ms mean (empirically measured)   |
 |          |        - Local Loopback HTTP Latency: 12-18 ms                         |
-|          |        - WAN Transit Scenario Model: 31.64 ms mean                     |
+|          |        - WAN Transit Scenario Model: 31.77 ms mean                     |
 |          |                                                                        |
 |          v                                                                        |
 |  [Physician Station: Alert Ringing]                                               |
@@ -281,10 +281,10 @@ In acute medical crises, treatment delays correlate directly with patient mortal
 ### 6.1 Emergency Signaling vs. Physical Media Streaming Reality
 A frequent misconception in tele-health literature is conflating **signaling notification delay** with **physical peer-to-peer audiovisual media establishment**. MedBlock-Share clearly separates these layers:
 1. **Application Processing Latency ($T_{\mathrm{proc}}$):** The genuine local CPU execution time for processing an incoming emergency SOS notification and triggering event broadcast:
-   Empirically measured over 1,000 trials at **$0.0051 \pm 0.0016$ ms** (Median: 0.0045 ms, P99: 0.0088 ms).
-2. **Local Loopback HTTP Request-Response Latency:** Full HTTP request handling over local TCP sockets measured at **$12 - 18$ ms**.
+   Empirically measured over 1,000 trials at **$0.0127 \pm 0.0099$ ms** (Median: 0.0108 ms, P95: 0.0185 ms, P99: 0.0523 ms).
+2. **Local Loopback HTTP Request-Response Latency:** Full HTTP request handling over local TCP sockets measured at **$12 - 18$ ms** (Mean: 14.80 ms).
 3. **Synthetic WAN/5G Network Transit Model ($T_{\mathrm{WAN}}$):** Modeled under a simulated wide-area network jitter distribution (18–45 ms transit delay):
-   Mean: **31.64 ms**, Median: 31.42 ms, P95: 43.68 ms, P99: 44.75 ms.
+   Mean: **31.77 ms**, Median: 31.50 ms, P95: 43.81 ms, P99: 44.80 ms.
 4. **WebRTC Signaling Verification vs. Headless Media Boundary:**
    The MedBlock-Share backend and client suite rigorously verify the **WebRTC signaling protocol** (offer, answer, ICE candidate routing, session state machine, and clinical precaution chat). However, headless CI and automated server test environments do not possess physical camera/microphone capture hardware or dedicated STUN/TURN traversal servers. Therefore, peer-to-peer audiovisual media streaming remains an interactive browser client capability that is **unverified in headless server tests**, and requires live clinician browsers and real-world network infrastructure.
 5. **Clinical Safety Guidance:**
@@ -318,31 +318,31 @@ To provide meaningful security forensics without fabricating claims:
 #### Table 1: Storage Cost Comparison Across Clinical Scenarios
 | Scenario | Storage Architecture | Raw Data Size | On-Chain EVM Gas | Polygon L2 Cost (\$USD) | Ethereum L1 Cost (\$USD) | Savings Ratio |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Scenario A: 10,000 Structured Records** | Native On-Chain Storage | 2.56 MB (80,000 words) | 1,600,000,000 gas | \$48.00 | \$144,000.00 | Baseline |
-| | **MedBlock-Share (IPFS + On-Chain CID)** | 2.56 MB (Off-chain) + 320 KB (CID) | 9,600,000 gas | **\$0.0018** | **\$864.00** | **99.40% Reduction** |
-| **Scenario B: 10 MiB Bulk Medical Image** | Native On-Chain Storage | 10.49 MB (327,680 words) | 6,553,600,000 gas | \$196.61 | \$589,824.00 | Baseline |
-| | **MedBlock-Share (IPFS + On-Chain CID)** | 10.49 MB (IPFS) + 32B CID | 84,210 gas | **\$0.0018** | **\$7.58** | **100.00% Reduction** |
+| **Scenario A: 10,000 Structured Records** | Native On-Chain Storage | 2.56 MB (80,000 words) | 1,600,000,000 gas | \$33.60 | \$144,000.00 | Baseline |
+| | **MedBlock-Share (IPFS + On-Chain CID)** | 2.56 MB (Off-chain) + 320 KB (CID) | 9,600,000 gas | **\$0.2016** | **\$864.00** | **99.40% Reduction** |
+| **Scenario B: 10 MiB Bulk Medical Image** | Native On-Chain Storage | 10.49 MB (327,680 words) | 6,553,600,000 gas | \$137.63 | \$589,824.00 | Baseline |
+| | **MedBlock-Share (IPFS + On-Chain CID)** | 10.49 MB (IPFS) + 32B CID | 84,210 gas | **\$0.0018** | **\$7.58** | **99.9987% ($\approx$ 100.00%) Reduction** |
 
-*Economic Assumptions: L1 Gas Price = 30 Gwei, ETH = \$3,000 USD; Polygon Gas Price = 30 Gwei, MATIC/POL = \$0.70 USD. Storage costs calculated at 20,000 gas per 32-byte EVM storage word.*
+*Economic Assumptions: L1 Gas Price = 30 Gwei, ETH = \$3,000 USD; Polygon Gas Price = 30 Gwei, MATIC/POL = \$0.70 USD. Storage costs calculated at 20,000 gas per 32-byte EVM storage word. Models reflect transaction and storage execution gas; external IPFS pinning fees are excluded as they depend on third-party commercial pinning providers.*
 
 #### Table 2: Measured Latency and Execution Benchmarks
 | Metric / Operation | Measurement Category | Sample ($N$) | Mean | Median | P95 | P99 | Specification / Target |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Emergency SOS CPU Dispatch** | Empirical (CPU) | 1,000 trials | 0.0051 ms | 0.0045 ms | 0.0076 ms | 0.0088 ms | $\le 1.0$ ms (Pass) |
+| **Emergency SOS CPU Dispatch** | Empirical (CPU) | 1,000 trials | 0.0127 ms | 0.0108 ms | 0.0185 ms | 0.0523 ms | $\le 1.0$ ms (Pass) |
 | **Emergency SOS Loopback HTTP** | Empirical (Local HTTP)| 50 trials | 14.80 ms | 13.90 ms | 17.50 ms | 18.20 ms | $\le 50$ ms (Pass) |
-| **Emergency SOS WAN Model** | Simulated Network | 1,000 trials | 31.64 ms | 31.42 ms | 43.68 ms | 44.75 ms | $\le 380$ ms (Scenario) |
-| **AES-256-GCM Envelope Encryption**| Empirical (Crypto)| 1,000 trials | 0.141 ms | 0.138 ms | 0.165 ms | 0.180 ms | $\le 5$ ms (Pass) |
-| **BBS98 PRE Key Generation** | Empirical (Crypto) | 500 trials | 0.046 ms | 0.044 ms | 0.058 ms | 0.065 ms | $\le 10$ ms (Pass) |
-| **Proxy Re-Encryption Transform** | Empirical (Crypto) | 1,000 trials | 0.003 ms | 0.003 ms | 0.004 ms | 0.005 ms | $\le 15$ ms (Pass) |
-| **Delegatee AES-GCM Decryption** | Empirical (Crypto) | 1,000 trials | 0.142 ms | 0.139 ms | 0.168 ms | 0.185 ms | $\le 15$ ms (Pass) |
+| **Emergency SOS WAN Model** | Simulated Network | 1,000 trials | 31.77 ms | 31.50 ms | 43.81 ms | 44.80 ms | $\le 380$ ms (Scenario) |
+| **AES-256-GCM Envelope Encryption**| Empirical (Crypto)| 1,000 trials | 0.773 ms | 0.825 ms | 1.150 ms | 1.523 ms | $\le 5$ ms (Pass) |
+| **BBS98 PRE Key Generation** | Empirical (Crypto) | 1,000 trials | 0.342 ms | 0.255 ms | 0.580 ms | 0.835 ms | $\le 10$ ms (Pass) |
+| **Proxy Re-Encryption Transform** | Empirical (Crypto) | 1,000 trials | 0.510 ms | 0.556 ms | 0.750 ms | 1.002 ms | $\le 15$ ms (Pass) |
+| **Delegatee AES-GCM Decryption** | Empirical (Crypto) | 1,000 trials | 0.365 ms | 0.380 ms | 0.580 ms | 0.797 ms | $\le 15$ ms (Pass) |
 | **Tamper Guard Execution (Hardhat EVM)**| EVM Receipt Gas | Hardhat Node | 30,652 gas | 30,652 gas | 30,652 gas | 30,652 gas | $\le 42,500$ gas (Pass) |
 | **Tamper Guard Execution (Simulated)** | EVM Simulation | 500 trials | 28,825 gas | 28,825 gas | 28,825 gas | 28,825 gas | $\le 42,500$ gas (Pass) |
 
 ```
 Emergency SOS Local CPU Dispatch Latency (1,000 Trials):
-[ 0.0036ms ] =========================== (Min)
-[ 0.0051ms ] ======================================================== (Mean: 0.0051 ms)
-[ 0.0088ms ] ================================================================= (P99: 0.0088 ms)
+[ 0.0096ms ] =========================== (Min)
+[ 0.0127ms ] ======================================================== (Mean: 0.0127 ms)
+[ 0.0523ms ] ================================================================= (P99: 0.0523 ms)
 [ 1.0000ms ] ========================================================================================= (Target Ceiling)
 ```
 
@@ -368,7 +368,7 @@ We explicitly highlight the fundamental properties of the BBS98 scheme:
 
 ## 10. Conclusion and Future Directions
 
-In this work, we designed, implemented, and empirically validated **MedBlock-Share**, an open-source decentralized EHR sharing platform combining Ethereum smart contracts, IPFS distributed storage, and BBS98 Proxy Re-Encryption with an AES-256-GCM authenticated envelope. We resolved the fundamental EVM revert-logging paradox through a non-reverting state defense pattern (measured at 30,652 gas in Hardhat EVM receipt), demonstrated sub-millisecond emergency tele-triage CPU dispatch (0.0051 ms mean), verified WebRTC signaling session lifecycle management, and provided transparent forensic network attribution. Empirical benchmarks on a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm a 99.40% cost reduction in structured records (and 100.00% reduction in bulk imaging files) over on-chain storage and sub-millisecond cryptographic operations.
+In this work, we designed, implemented, and empirically validated **MedBlock-Share**, an open-source decentralized EHR sharing platform combining Ethereum smart contracts, IPFS distributed storage, and BBS98 Proxy Re-Encryption with an AES-256-GCM authenticated envelope. We resolved the fundamental EVM revert-logging paradox through a non-reverting state defense pattern (measured at 30,652 gas in Hardhat EVM receipt), demonstrated sub-millisecond emergency tele-triage CPU dispatch (0.0127 ms mean), verified WebRTC signaling session lifecycle management, and provided transparent forensic network attribution. Empirical benchmarks on a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm a 99.40% cost reduction in structured records (and 99.9987% reduction in bulk imaging files) over on-chain storage and sub-millisecond cryptographic operations.
 
 Future work will explore the migration of the re-encryption engine to post-quantum lattice-based constructions (e.g., Kyber-based PRE) and multi-party threshold computation (MPC) to eliminate single-proxy trust assumptions entirely.
 
