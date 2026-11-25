@@ -1,10 +1,11 @@
 /**
- * MedBlock-Share: BBS98 Proxy Re-Encryption Engine (JavaScript / Node.js / Browser)
- * Matches Dissertation Synopsis Section 6.1:
+ * MedBlock-Share: BBS98 Proxy Re-Encryption Engine (JavaScript / Node.js)
+ * Mathematical Formulation matching Dissertation Synopsis Section 6.1:
  *   rk_{A -> B} = (sk_B / sk_A) mod q
  *   C_A = (g^{r * sk_A} mod p, m * g^r mod p)
  *   C_B = ( (c1)^{rk_{A -> B}} mod p, c2 ) = ( g^{r * sk_B} mod p, m * g^r mod p )
  *   Doctor Decryption: g^r = (c1')^{1 / sk_B mod q} mod p => m = (c2 * (g^r)^{-1}) mod p
+ *   Hybrid AES-256-GCM Envelope Authenticated Encryption for Medical Files
  */
 
 const crypto = require('crypto');
@@ -16,7 +17,6 @@ const P = BigInt("0x" + P_HEX);
 const Q = BigInt("0x" + Q_HEX);
 const G = 4n;
 
-// Modular exponentiation (base^exp mod mod)
 function modPow(base, exp, mod) {
   let res = 1n;
   base = ((base % mod) + mod) % mod;
@@ -29,7 +29,6 @@ function modPow(base, exp, mod) {
   return res;
 }
 
-// Extended Euclidean Algorithm for modular inverse
 function modInverse(a, m) {
   a = ((a % m) + m) % m;
   let [m0, y, x] = [m, 0n, 1n];
@@ -47,7 +46,6 @@ function modInverse(a, m) {
   return x;
 }
 
-// Random BigInt in range [2, max - 1]
 function randBigInt(max) {
   const byteLen = Math.ceil(max.toString(16).length / 2);
   while (true) {
@@ -64,6 +62,16 @@ class BBS98EngineJS {
     this.q = q;
   }
 
+  validatePublicKey(pkHex) {
+    try {
+      const pk = BigInt(pkHex);
+      if (pk < 2n || pk >= this.p - 1n) return false;
+      return modPow(pk, this.q, this.p) === 1n;
+    } catch (e) {
+      return false;
+    }
+  }
+
   generateKeypair() {
     const sk = randBigInt(this.q - 1n);
     const pk = modPow(this.g, sk, this.p);
@@ -76,12 +84,18 @@ class BBS98EngineJS {
   generateRekey(skAHex, skBHex) {
     const skA = BigInt(skAHex);
     const skB = BigInt(skBHex);
+    if (skA <= 0n || skA >= this.q || skB <= 0n || skB >= this.q) {
+      throw new Error("Secret key out of prime order bounds");
+    }
     const invSkA = modInverse(skA, this.q);
     const rk = (skB * invSkA) % this.q;
     return "0x" + rk.toString(16);
   }
 
   encrypt(pkAHex, messageBigInt) {
+    if (!this.validatePublicKey(pkAHex)) {
+      throw new Error("Invalid public key: failed subgroup membership test");
+    }
     const pkA = BigInt(pkAHex);
     const m = BigInt(messageBigInt);
     if (m <= 0n || m >= this.p) throw new Error("Message out of bounds [1, p-1]");
@@ -101,6 +115,9 @@ class BBS98EngineJS {
     const c1 = BigInt(c1Hex);
     const c2 = BigInt(c2Hex);
     const rk = BigInt(rkHex);
+
+    if (rk <= 0n || rk >= this.q) throw new Error("Invalid re-encryption key");
+    if (modPow(c1, this.q, this.p) !== 1n) throw new Error("c1 not in prime-order subgroup");
 
     const c1Prime = modPow(c1, rk, this.p);
     return {
@@ -134,7 +151,6 @@ class BBS98EngineJS {
   }
 }
 
-// Hybrid AES-256-GCM Envelope Encryption
 class MedBlockPipelineJS {
   constructor() {
     this.bbs98 = new BBS98EngineJS();
@@ -154,12 +170,14 @@ class MedBlockPipelineJS {
     const tag = cipher.getAuthTag();
 
     const { c1, c2 } = this.bbs98.encrypt(pkHex, dekBigInt);
-    const dataHash = crypto.createHash('sha256').update(ciphertext).digest('hex');
+    const fullPayload = Buffer.concat([ciphertext, tag]);
+    const dataHash = crypto.createHash('sha256').update(fullPayload).digest('hex');
 
     return {
       ciphertext: ciphertext.toString('hex'),
-      iv: iv.toString('hex'),
       tag: tag.toString('hex'),
+      iv: iv.toString('hex'),
+      fullPayload: fullPayload.toString('hex'),
       dataHash,
       c1,
       c2,
@@ -178,7 +196,26 @@ class MedBlockPipelineJS {
     const dek = Buffer.from(cleanHex, 'hex');
 
     const decipher = crypto.createDecipheriv('aes-256-gcm', dek, Buffer.from(ivHex, 'hex'));
-    decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+    if (tagHex) {
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+    }
+    const plaintext = Buffer.concat([
+      decipher.update(Buffer.from(ciphertextHex, 'hex')),
+      decipher.final()
+    ]);
+    return plaintext;
+  }
+
+  patientDecryptRecord(c1, c2, skAHex, ciphertextHex, ivHex, tagHex) {
+    const dekHexRaw = this.bbs98.decryptOriginal(c1, c2, skAHex);
+    let cleanHex = dekHexRaw.replace(/^0x/, '');
+    while (cleanHex.length < 64) cleanHex = '0' + cleanHex;
+    const dek = Buffer.from(cleanHex, 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', dek, Buffer.from(ivHex, 'hex'));
+    if (tagHex) {
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+    }
     const plaintext = Buffer.concat([
       decipher.update(Buffer.from(ciphertextHex, 'hex')),
       decipher.final()

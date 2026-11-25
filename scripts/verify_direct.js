@@ -1,6 +1,6 @@
 /**
  * MedBlock-Share: Comprehensive Direct Architecture Verification
- * Exercises all 6 dissertation objectives directly in-process without network sandbox restrictions.
+ * Validates Objectives 1-6, Cryptographic Proofs & Benchmark Compliance
  */
 
 const fs = require('fs');
@@ -28,7 +28,7 @@ async function runDirectVerification() {
   const bobKeys = prePipeline.bbs98.generateKeypair();
 
   const rawMedicalFile = Buffer.from(
-    "CONFIDENTIAL HEALTH RECORD (HIPAA/GDPR COMPLIANT)\n" +
+    "CONFIDENTIAL HEALTH RECORD (HIPAA/GDPR COMPLIANT DESIGN)\n" +
     "Patient: Jane Alice Doe (ID: PT-90214-X)\n" +
     "Clinical Finding: Acute Coronary Syndrome (STEMI Anterior Wall)\n" +
     "Vitals: HR 142 bpm | BP 185/110 mmHg | SpO2 88%\n" +
@@ -86,7 +86,7 @@ async function runDirectVerification() {
   const blockchain = new BlockchainEngine();
 
   // Register record on-chain
-  const testRecordId = "EHR-2026-TEST-" + Date.now();
+  const testRecordId = "EHR-2026-DIRECT-" + Date.now();
   const regEvent = blockchain.registerRecord({
     caller: blockchain.accounts.patient,
     recordId: testRecordId,
@@ -112,17 +112,18 @@ async function runDirectVerification() {
 
   // Unauthorized Tamper Attempt by Attacker Eve
   console.log("\n    [*] Simulating Intrusion: Attacker Eve attempts to overwrite patient record...");
-  const tamperResult = blockchain.attemptTamperRecord({
+  const tamperResult = blockchain.tamperProtectedUpdate({
     caller: blockchain.accounts.attacker,
     recordId: testRecordId,
-    fakeCID: "QmMaliciousInjectedCorruptedPayload0000000000",
+    newCID: "QmMaliciousInjectedCorruptedPayload0000000000",
+    newDataHash: "0xdeadbeef1337badc0de",
     proxyGatewayIP: "194.26.29.112:8080 (Tor Exit Node)",
     attackVector: "UNAUTHORIZED_RECORD_OVERWRITE_INJECTION",
     signatureValid: false
   });
 
-  console.log(`    Tamper Transaction Reverted: ${tamperResult.reverted}`);
-  console.log(`    Smart Contract Revert Reason: ${tamperResult.reason}`);
+  console.log(`    Tamper Neutralized:          ${tamperResult.tamperNeutralized}`);
+  console.log(`    Smart Contract Audit Status: ${tamperResult.reason}`);
   console.log(`    Event Emitted:               ${tamperResult.event.eventName}`);
   console.log(`    Captured Attacker Wallet:    ${tamperResult.event.caller}`);
   console.log(`    Captured Attacker Proxy IP:  ${tamperResult.event.proxyGatewayIP}`);
@@ -134,14 +135,14 @@ async function runDirectVerification() {
   // -------------------------------------------------------------
   // OBJECTIVE 5: FORENSIC PROXY ALERT DAEMON & DUAL ALERT
   // -------------------------------------------------------------
-  console.log("[*] Objective 5: Testing Forensic Proxy Alert Daemon & GeoIP Attribution...");
+  console.log("[*] Objective 5: Testing Forensic Proxy Alert Daemon & Ingress Attribution...");
   const daemon = new ForensicAlertDaemon(blockchain, null);
   const forensicReport = await daemon.analyzeTamperEvent(tamperResult.event);
   const dualAlert = await daemon.dispatchDualAlert(forensicReport);
 
   console.log(`    Incident ID:              ${forensicReport.incidentId}`);
   console.log(`    Attacker Wallet:          ${forensicReport.attackerWallet}`);
-  console.log(`    Attacker Proxy IP:        ${forensicReport.rawProxyIP}`);
+  console.log(`    Attacker Proxy IP:        ${forensicReport.ingressSource.rawProxyIP}`);
   console.log(`    GeoIP Geolocation:        ${forensicReport.geolocation.city}, ${forensicReport.geolocation.country}`);
   console.log(`    Proxy Classification:     ${forensicReport.geolocation.proxyType} (ASN: ${forensicReport.geolocation.asn})`);
   console.log(`    Threat Intelligence Score:${forensicReport.threatScore} / 100`);
@@ -151,7 +152,7 @@ async function runDirectVerification() {
   console.log("    [PASSED] Objective 5 strictly satisfied.\n");
 
   // -------------------------------------------------------------
-  // OBJECTIVE 3: 1-CLICK PATIENT EMERGENCY RISK SOS (< 380 ms)
+  // OBJECTIVE 3: 1-CLICK PATIENT EMERGENCY SOS (< 380 ms)
   // -------------------------------------------------------------
   console.log("[*] Objective 3: Testing 1-Click Patient Emergency SOS Tele-Triage (Section 6.3)...");
   const teleTriage = new TeleTriageHub(null);
@@ -172,7 +173,7 @@ async function runDirectVerification() {
 
   console.log(`    Emergency Call ID:        ${sosAlert.callId}`);
   console.log(`    Acute Risk Condition:     ${sosAlert.acuteRisk}`);
-  console.log(`    Measured End-to-End Latency:${sosAlert.latencyMs} ms`);
+  console.log(`    Measured Signaling Latency:${sosAlert.signalingLatencyMs} ms`);
   console.log(`    Dissertation Target Bound:<= 380 ms`);
   console.log(`    Latency Compliance:       ${sosAlert.isCompliant ? 'STRICTLY COMPLIANT (< 380 ms)' : 'FAILED'}`);
 

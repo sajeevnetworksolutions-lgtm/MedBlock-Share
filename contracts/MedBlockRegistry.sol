@@ -5,12 +5,20 @@ pragma solidity 0.8.24;
  * @title MedBlockRegistry
  * @dev MedBlock-Share: Decentralized Patient-Centric Electronic Health Record Sharing
  *      via Proxy Re-Encryption, Emergency Tele-Triage & Tamper-Alert Proxy Forensics.
- *      Compliant with M.Tech Dissertation Specifications:
- *        - Dual-tier storage (IPFS CIDs on-chain, encrypted files off-chain)
- *        - Proxy Re-Encryption consent registry (rk_{A -> B})
- *        - 1-Click Patient Emergency Tele-Triage SOS dispatcher
- *        - Cryptographic ownership verification: Audit(H_CID, sigma)
- *        - Real-Time Tamper-Detection with gas bound <= 42,500 gas
+ *
+ * Architecture & EVM Tamper Defense Model:
+ *   In EVM, a full revert() rolls back all state and log emissions of that transaction.
+ *   To ensure authentic, non-repudiable on-chain evidence, MedBlock-Share implements:
+ *     1. Non-Reverting Tamper Defense Guard (`tamperProtectedUpdate`):
+ *        Rejects unauthorized data modification without rolling back the transaction,
+ *        allowing `UnauthorizedTamperAttempt` to persistently log on the Ethereum ledger.
+ *     2. Sentinel Forensic Reporting (`reportTamperAttempt`):
+ *        Allows an authorized hospital gateway or watchdog sentinel to report externally
+ *        reverted calls or RPC-intercepted attacks with non-repudiable proxy IP details.
+ *     3. Strict Access Control on Records:
+ *        Cryptographic ECDSA verification: Audit(H_CID, sigma) = 1{VerifySig(pk, H, sigma)}.
+ *     4. Low-Cost Gas Bound:
+ *        Tamper alert emission strictly guaranteed <= 42,500 gas (dissertation Section 6.3).
  */
 contract MedBlockRegistry {
 
@@ -23,6 +31,7 @@ contract MedBlockRegistry {
         string c1;
         string c2;
         uint256 createdAt;
+        uint256 lastModified;
         bool isFrozen;
     }
 
@@ -42,21 +51,26 @@ contract MedBlockRegistry {
         bool acknowledged;
     }
 
-    struct TamperLog {
+    struct TamperAudit {
         address attacker;
         address targetPatient;
         string recordId;
         uint256 timestamp;
         string proxyGatewayIP;
         string attackVector;
+        bytes attackPayload;
     }
 
-    // Storage Mappings
+    // Contract State
+    address public contractOwner;
+    mapping(address => bool) public authorizedSentinels;
+
     mapping(string => MedicalRecord) private records;
     mapping(address => string[]) private patientRecordIds;
     mapping(address => mapping(address => DoctorConsent)) private consentMatrix; // patient => doctor => consent
     mapping(address => address[]) private patientDoctors;
-    mapping(string => TamperLog) public tamperLogs;
+    mapping(string => uint256) public recordTamperCount;
+    TamperAudit[] public tamperAuditLog;
 
     // Events
     event RecordRegistered(
@@ -106,18 +120,35 @@ contract MedBlockRegistry {
         uint256 timestamp
     );
 
+    event SentinelUpdated(address indexed sentinel, bool isAuthorized);
+
     // Errors
     error RecordNotFound(string recordId);
     error UnauthorizedAccess(address caller, string recordId);
     error RecordIsQuarantined(string recordId);
-    error InvalidCryptographicSignature();
     error ConsentExpiredOrMissing(address patient, address doctor);
+    error OnlySentinelOrOwner(address caller);
 
-    // Modifiers
-    modifier onlyRecordOwner(string memory recordId) {
-        if (records[recordId].patient == address(0)) revert RecordNotFound(recordId);
-        if (records[recordId].patient != msg.sender) revert UnauthorizedAccess(msg.sender, recordId);
+    modifier onlyOwner() {
+        require(msg.sender == contractOwner, "Only contract owner");
         _;
+    }
+
+    modifier onlySentinel() {
+        if (msg.sender != contractOwner && !authorizedSentinels[msg.sender]) {
+            revert OnlySentinelOrOwner(msg.sender);
+        }
+        _;
+    }
+
+    constructor() {
+        contractOwner = msg.sender;
+        authorizedSentinels[msg.sender] = true;
+    }
+
+    function setSentinel(address sentinel, bool authorized) external onlyOwner {
+        authorizedSentinels[sentinel] = authorized;
+        emit SentinelUpdated(sentinel, authorized);
     }
 
     /**
@@ -143,6 +174,7 @@ contract MedBlockRegistry {
             c1: c1,
             c2: c2,
             createdAt: block.timestamp,
+            lastModified: block.timestamp,
             isFrozen: false
         });
 
@@ -177,7 +209,6 @@ contract MedBlockRegistry {
         });
 
         patientDoctors[msg.sender].push(doctor);
-
         emit ConsentGranted(msg.sender, doctor, expiry, block.timestamp);
     }
 
@@ -250,7 +281,6 @@ contract MedBlockRegistry {
 
     /**
      * @notice Objective 3: 1-Click Patient Emergency Risk SOS dispatch.
-     *         Dispatches priority encrypted telemetry to doctor.
      */
     function dispatchEmergencySOS(
         address doctor,
@@ -270,33 +300,39 @@ contract MedBlockRegistry {
     }
 
     /**
-     * @notice Objective 4 & Section 6.2: Cryptographic Tamper-Detection & Ownership Verification.
+     * @notice Architecture 1: Non-Reverting Tamper Defense Guard.
+     *         Protects the record against unauthorized modification while allowing the
+     *         `UnauthorizedTamperAttempt` event to PERSIST on-chain in the block receipt!
      *         Audit(H_CID, sigma) = 1{VerifySig(pk_patient, H_CID, sigma)}, Alert if 0.
-     *         Gas bound: Gas(EmitTamperAlert) <= 42,500 gas.
      */
-    function attemptTamperRecord(
+    function tamperProtectedUpdate(
         string calldata recordId,
-        string calldata fakeCID,
+        string calldata newCID,
+        bytes32 newDataHash,
         string calldata proxyGatewayIP,
         string calldata attackVector,
         bytes calldata attackPayload,
         bytes calldata signature
-    ) external returns (bool) {
+    ) external returns (bool success) {
         MedicalRecord storage r = records[recordId];
         if (r.patient == address(0)) revert RecordNotFound(recordId);
+        if (r.isFrozen) revert RecordIsQuarantined(recordId);
 
         // Verify cryptographic signature: Audit(H_CID, sigma)
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(recordId, fakeCID, msg.sender))
+                keccak256(abi.encodePacked(recordId, newCID, msg.sender))
             )
         );
 
         address recoveredSigner = recoverSigner(messageHash, signature);
 
-        // If unauthorized tamper detected (caller not owner AND signature invalid)
+        // Tamper condition: caller is NOT owner OR signature does not match owner
         if (msg.sender != r.patient || recoveredSigner != r.patient) {
+            recordTamperCount[recordId]++;
+
+            // Emit persistent on-chain security alert
             emit UnauthorizedTamperAttempt(
                 msg.sender,
                 r.patient,
@@ -306,17 +342,59 @@ contract MedBlockRegistry {
                 attackPayload,
                 attackVector
             );
+
+            // Record preserved: state NOT altered
             return false;
         }
 
-        // Legitimate update if valid signature and owner
-        r.ipfsCID = fakeCID;
+        // Valid owner update
+        r.ipfsCID = newCID;
+        r.dataHash = newDataHash;
+        r.lastModified = block.timestamp;
         return true;
     }
 
     /**
-     * @notice Optimized forensic tamper alert logging function.
-     *         Guaranteed gas bound: <= 42,500 gas (dissertation Section 6.3).
+     * @notice Architecture 2: Sentinel Forensic Reporting.
+     *         Allows an authorized hospital RPC gateway or security daemon to commit
+     *         forensic evidence on-chain when an attack is intercepted or reverted off-chain.
+     */
+    function reportTamperAttempt(
+        address attacker,
+        address targetPatient,
+        string calldata recordId,
+        string calldata proxyGatewayIP,
+        string calldata attackVector,
+        bytes calldata attackPayload
+    ) external onlySentinel returns (bool) {
+        recordTamperCount[recordId]++;
+
+        tamperAuditLog.push(TamperAudit({
+            attacker: attacker,
+            targetPatient: targetPatient,
+            recordId: recordId,
+            timestamp: block.timestamp,
+            proxyGatewayIP: proxyGatewayIP,
+            attackVector: attackVector,
+            attackPayload: attackPayload
+        }));
+
+        emit UnauthorizedTamperAttempt(
+            attacker,
+            targetPatient,
+            recordId,
+            block.timestamp,
+            proxyGatewayIP,
+            attackPayload,
+            attackVector
+        );
+
+        return true;
+    }
+
+    /**
+     * @notice Architecture 3: Pure Gas Bound Audited Tamper Alert.
+     *         Guaranteed bound: <= 42,500 gas (dissertation Section 6.3).
      */
     function emitTamperAlert(
         address targetPatient,
@@ -343,17 +421,18 @@ contract MedBlockRegistry {
     function quarantineRecord(string calldata recordId, string calldata reason) external {
         MedicalRecord storage r = records[recordId];
         if (r.patient == address(0)) revert RecordNotFound(recordId);
-        require(msg.sender == r.patient, "Only owner can quarantine");
+        require(msg.sender == r.patient || authorizedSentinels[msg.sender], "Unauthorized to quarantine");
 
         r.isFrozen = true;
-        emit RecordQuarantined(recordId, msg.sender, reason, block.timestamp);
+        emit RecordQuarantined(recordId, r.patient, reason, block.timestamp);
     }
 
-    /**
-     * @notice Retrieve list of record IDs for a patient.
-     */
     function getPatientRecords(address patient) external view returns (string[] memory) {
         return patientRecordIds[patient];
+    }
+
+    function getTamperAuditCount() external view returns (uint256) {
+        return tamperAuditLog.length;
     }
 
     /**

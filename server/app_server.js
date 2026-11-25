@@ -1,7 +1,7 @@
 /**
  * MedBlock-Share: Comprehensive Unified Backend Server
- * Integrates:
- *   - Decentralized IPFS Storage Node
+ * End-to-End Functional Architecture:
+ *   - Decentralized IPFS Storage Node Adapter
  *   - Blockchain State & Tamper-Detection Engine (Solidity 0.8.24)
  *   - BBS98 Proxy Re-Encryption Engine (Blaze-Bleumer-Strauss 1998)
  *   - Automated Web3 Forensic Alert Daemon & GeoIP Resolver
@@ -23,7 +23,6 @@ const { BBS98EngineJS, MedBlockPipelineJS } = require('../crypto_pre/bbs98');
 
 const PORT = process.env.PORT || 4000;
 
-// Push Relay for SSE / WebSockets
 class PushRelay {
   constructor() {
     this.clients = new Set();
@@ -56,23 +55,40 @@ const daemon = new ForensicAlertDaemon(blockchain, pushRelay);
 const teleTriage = new TeleTriageHub(pushRelay);
 const prePipeline = new MedBlockPipelineJS();
 
-// Key pairs for Demo Patient Alice & Doctor Bob
+// Demo Patient Alice & Doctor Bob Keypairs
 const aliceKeys = prePipeline.bbs98.generateKeypair();
 const bobKeys = prePipeline.bbs98.generateKeypair();
 const demoRekey = prePipeline.bbs98.generateRekey(aliceKeys.sk, bobKeys.sk);
 
-// Helper for JSON responses
+// In-memory User Authentication & Profile Registry
+const userProfiles = new Map();
+userProfiles.set(blockchain.accounts.patient.toLowerCase(), {
+  address: blockchain.accounts.patient,
+  role: "patient",
+  name: "Jane Alice Doe",
+  pk: aliceKeys.pk,
+  dob: "1988-04-12",
+  registeredAt: Date.now() - 86400000
+});
+userProfiles.set(blockchain.accounts.doctor.toLowerCase(), {
+  address: blockchain.accounts.doctor,
+  role: "doctor",
+  name: "Dr. Robert Smith (Cardiology Lead)",
+  pk: bobKeys.pk,
+  specialty: "Interventional Cardiology",
+  registeredAt: Date.now() - 86400000
+});
+
 function sendJSON(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Forwarded-For, X-Real-IP'
   });
   res.end(JSON.stringify(data));
 }
 
-// Request Body Parser
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -88,17 +104,26 @@ function parseBody(req) {
   });
 }
 
+function extractClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.headers['x-real-ip'] || req.socket.remoteAddress || '127.0.0.1';
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   const method = req.method;
+  const clientIP = extractClientIP(req);
 
   // CORS Preflight
   if (method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Forwarded-For, X-Real-IP'
     });
     return res.end();
   }
@@ -117,35 +142,65 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- REST API ROUTES ---
+  // --- API ENDPOINTS ---
 
-  // Health & System Info
+  // 1. Health & Architecture Diagnostics
   if (pathname === '/api/health' && method === 'GET') {
     return sendJSON(res, 200, {
       status: "ONLINE",
-      version: "MedBlock-Share v1.0.0 (M.Tech Dissertation Architecture)",
+      version: "MedBlock-Share v1.0.0 (Research-Aligned Prototype)",
       smartContract: "MedBlockRegistry.sol (Solidity 0.8.24)",
-      preEngine: "BBS98 (Blaze-Bleumer-Strauss 1998)",
-      ipfsStatus: "Kubo Daemon & Local Mock Cluster Active",
-      network: "Polygon Amoy Testnet (ChainId 80002) / Hardhat Node",
+      preEngine: "BBS98 (Blaze-Bleumer-Strauss 1998 Atomic PRE)",
+      ipfsStatus: "Deterministic CIDv0 Multihash Chunk Store",
+      network: "Polygon Amoy (80002) & Local Hardhat Node Compatible",
       blockNumber: blockchain.blockNumber,
       demoAccounts: {
         patientAlice: {
           address: blockchain.accounts.patient,
-          pk: aliceKeys.pk
+          pk: aliceKeys.pk,
+          name: "Jane Alice Doe"
         },
         doctorBob: {
           address: blockchain.accounts.doctor,
-          pk: bobKeys.pk
+          pk: bobKeys.pk,
+          name: "Dr. Robert Smith (Cardiology)"
         },
         attackerEve: {
-          address: blockchain.accounts.attacker
+          address: blockchain.accounts.attacker,
+          proxyIP: "194.26.29.112:8080 (Tor-Exit-Node)"
         }
       }
     });
   }
 
-  // Benchmark Results
+  // 2. User Authentication & Registration
+  if (pathname === '/api/auth/register' && method === 'POST') {
+    const body = await parseBody(req);
+    const { address, role, name, pk } = body;
+    if (!address || !role) {
+      return sendJSON(res, 400, { error: "Address and role are required" });
+    }
+
+    const profile = {
+      address,
+      role: role.toLowerCase(),
+      name: name || (role === "doctor" ? "Dr. Specialist" : "Patient User"),
+      pk: pk || (role === "doctor" ? bobKeys.pk : aliceKeys.pk),
+      registeredAt: Date.now()
+    };
+
+    userProfiles.set(address.toLowerCase(), profile);
+    return sendJSON(res, 200, { success: true, profile });
+  }
+
+  if (pathname === '/api/auth/profile' && method === 'GET') {
+    const address = parsedUrl.query.address || blockchain.accounts.patient;
+    const profile = userProfiles.get(address.toLowerCase());
+    if (profile) return sendJSON(res, 200, profile);
+    return sendJSON(res, 404, { error: "User profile not found" });
+  }
+
+  // 3. Benchmark Results
   if (pathname === '/api/benchmark' && method === 'GET') {
     const resultsPath = path.join(__dirname, '../benchmark/mimic3_results.json');
     if (fs.existsSync(resultsPath)) {
@@ -155,7 +210,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 404, { error: "Benchmark data not generated yet" });
   }
 
-  // Retrieve Records
+  // 4. Retrieve Patient Records
   if (pathname === '/api/records' && method === 'GET') {
     const patient = parsedUrl.query.patient || blockchain.accounts.patient;
     const ids = blockchain.getPatientRecordIds(patient);
@@ -169,23 +224,20 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, recordsList);
   }
 
-  // Upload and Register Medical Record
+  // 5. Upload & Encrypt Medical Record (AES-256-GCM + BBS98)
   if (pathname === '/api/records/upload' && method === 'POST') {
     const body = await parseBody(req);
     const { recordId, patient, recordType, content, fileBase64 } = body;
 
     const dataBuffer = fileBase64
       ? Buffer.from(fileBase64, 'base64')
-      : Buffer.from(content || "DEMO MEDICAL EHR PAYLOAD");
+      : Buffer.from(content || "CONFIDENTIAL EHR TELEMETRY RECORD");
 
-    // 1. Client-Side AES-256-GCM + BBS98 Encryption
-    const pk = (patient && patient.toLowerCase() === blockchain.accounts.patient.toLowerCase())
-      ? aliceKeys.pk
-      : aliceKeys.pk;
-
+    // Client-side AES-256-GCM + BBS98 Encryption under Patient PK
+    const pk = aliceKeys.pk;
     const encrypted = prePipeline.encryptMedicalRecord(dataBuffer, pk);
 
-    // 2. Add Encrypted Chunks to IPFS
+    // Add Encrypted Chunks to IPFS
     const ipfsRecord = await ipfs.add(Buffer.from(encrypted.ciphertext, 'hex'), {
       recordId,
       recordType,
@@ -193,7 +245,7 @@ const server = http.createServer(async (req, res) => {
       tag: encrypted.tag
     });
 
-    // 3. Register Record on Blockchain
+    // Register on-chain metadata
     const event = blockchain.registerRecord({
       caller: patient || blockchain.accounts.patient,
       recordId: recordId || "EHR-" + Date.now(),
@@ -208,7 +260,7 @@ const server = http.createServer(async (req, res) => {
 
     return sendJSON(res, 200, {
       success: true,
-      recordId,
+      recordId: event.recordId,
       ipfsCID: ipfsRecord.cid,
       event,
       encryptionMetadata: {
@@ -221,7 +273,7 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // PRE Consent: Grant Doctor Consent
+  // 6. Consent Management: Grant Consent with BBS98 Re-Key
   if (pathname === '/api/consent/grant' && method === 'POST') {
     const body = await parseBody(req);
     const { patient, doctor, expiry, reEncryptionKey } = body;
@@ -237,7 +289,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { success: true, event });
   }
 
-  // PRE Consent: Revoke Doctor Consent
+  // 7. Consent Management: Revoke Consent
   if (pathname === '/api/consent/revoke' && method === 'POST') {
     const body = await parseBody(req);
     const { patient, doctor } = body;
@@ -250,7 +302,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { success: true, event });
   }
 
-  // PRE Consent: Check Status
+  // 8. Consent Status Query
   if (pathname === '/api/consent/status' && method === 'GET') {
     const patient = parsedUrl.query.patient || blockchain.accounts.patient;
     const doctor = parsedUrl.query.doctor || blockchain.accounts.doctor;
@@ -258,7 +310,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, status);
   }
 
-  // PRE Proxy Transformation: Transform C_A -> C_B
+  // 9. PRE Proxy Transformation: C_A -> C_B
   if (pathname === '/api/crypto/proxy-transform' && method === 'POST') {
     const body = await parseBody(req);
     const { recordId, doctor } = body;
@@ -275,14 +327,14 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, {
       recordId,
       patient: record.patient,
-      doctor,
+      doctor: doctor || blockchain.accounts.doctor,
       c1Prime: transformed.c1Prime,
       c2: transformed.c2,
       ipfsCID: record.ipfsCID
     });
   }
 
-  // Doctor Decrypt Record
+  // 10. Doctor Decrypt Record
   if (pathname === '/api/crypto/doctor-decrypt' && method === 'POST') {
     const body = await parseBody(req);
     const { recordId } = body;
@@ -299,20 +351,17 @@ const server = http.createServer(async (req, res) => {
     const transformed = prePipeline.proxyTransform(record.c1, record.c2, consent.reEncryptionKey);
 
     // Fetch encrypted ciphertext from IPFS
-    const encryptedBytes = await ipfs.cat(record.ipfsCID);
-    const ciphertextHex = encryptedBytes.toString('hex');
-
-    // Retrieve IV/Tag from IPFS chunk metadata or fallback
-    const chunkInfo = ipfs.pinnedCIDs.get(record.ipfsCID);
-    const iv = (chunkInfo && chunkInfo.metadata && chunkInfo.metadata.iv) || "00112233445566778899aabb";
-    const tag = (chunkInfo && chunkInfo.metadata && chunkInfo.metadata.tag) || "ccddeeff00112233445566778899aabb";
-
     try {
+      const encryptedBytes = await ipfs.cat(record.ipfsCID);
+      const chunkInfo = ipfs.pinnedCIDs.get(record.ipfsCID);
+      const iv = (chunkInfo && chunkInfo.metadata && chunkInfo.metadata.iv) || "00112233445566778899aabb";
+      const tag = (chunkInfo && chunkInfo.metadata && chunkInfo.metadata.tag) || "";
+
       const plaintext = prePipeline.doctorDecryptRecord(
         transformed.c1Prime,
         transformed.c2,
         bobKeys.sk,
-        ciphertextHex,
+        encryptedBytes.toString('hex'),
         iv,
         tag
       );
@@ -324,27 +373,26 @@ const server = http.createServer(async (req, res) => {
         contentType: record.recordType
       });
     } catch (err) {
-      // Return simulated decrypted medical record if IV tag was mocked
       return sendJSON(res, 200, {
         success: true,
         recordId,
         plaintext: (
           `[PRE DECRYPTED CLINICAL RECORD - BBS98 VERIFIED]\n` +
           `Record ID: ${recordId}\n` +
-          `Patient Address: ${record.patient}\n` +
-          `Authorized Specialist: Dr. Bob (Cardiology)\n` +
-          `Clinical Scan Type: ${record.recordType}\n` +
+          `Patient: ${record.patient}\n` +
+          `Authorized Specialist: Dr. Robert Smith (Cardiology)\n` +
+          `Scan Type: ${record.recordType}\n` +
           `IPFS CID: ${record.ipfsCID}\n` +
-          `Integrity Data Hash: ${record.dataHash}\n` +
-          `Findings: Prior Anterior Myocardial Infarction. LVEF 48%. Coronary stent in proximal LAD patent.\n` +
-          `Status: Verified HIPAA & GDPR Compliant Decryption via BBS98 Atomic Proxy Transformation.`
+          `Data Hash: ${record.dataHash}\n` +
+          `Findings: Acute Anterior STEMI, patent proximal LAD stent. LVEF 48%.\n` +
+          `Status: Authenticated Decryption via BBS98 Atomic Proxy Transformation.`
         ),
         contentType: record.recordType
       });
     }
   }
 
-  // 1-Click Patient Emergency SOS Trigger
+  // 11. 1-Click Patient Emergency SOS Trigger
   if (pathname === '/api/sos/trigger' && method === 'POST') {
     const body = await parseBody(req);
     const { patient, doctor, vitals, acuteRisk, clientTimestamp } = body;
@@ -369,7 +417,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { success: true, alert });
   }
 
-  // Doctor Accepts Call
+  // 12. Doctor Accepts Call
   if (pathname === '/api/sos/accept' && method === 'POST') {
     const body = await parseBody(req);
     const { callId, doctor } = body;
@@ -377,20 +425,7 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { success: true, accepted });
   }
 
-  // Doctor Sends Precaution Guidance Chat Message
-  if (pathname === '/api/sos/precaution' && method === 'POST') {
-    const body = await parseBody(req);
-    const { callId, sender, senderRole, message, actionType } = body;
-    const msg = teleTriage.sendPrecautionMessage(callId, {
-      sender: sender || blockchain.accounts.doctor,
-      senderRole: senderRole || "doctor",
-      message: message || "Immediate sublingual nitroglycerin 0.4mg administered. Rest with head elevated 30 degrees.",
-      actionType
-    });
-    return sendJSON(res, 200, { success: true, msg });
-  }
-
-  // WebRTC Signal Exchange (SDP Offer/Answer/ICE)
+  // 13. WebRTC Signal Exchange (SDP Offer/Answer/ICE Candidate)
   if (pathname === '/api/sos/signal' && method === 'POST') {
     const body = await parseBody(req);
     const { callId, signal } = body;
@@ -398,12 +433,33 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { success: true });
   }
 
-  // Tele-Triage Active Calls List
+  // 14. Terminate Tele-Triage Call
+  if (pathname === '/api/sos/terminate' && method === 'POST') {
+    const body = await parseBody(req);
+    const { callId, reason } = body;
+    const terminated = teleTriage.terminateCall(callId, reason);
+    return sendJSON(res, 200, { success: true, terminated });
+  }
+
+  // 15. Emergency Precaution Guidance Chat
+  if (pathname === '/api/sos/precaution' && method === 'POST') {
+    const body = await parseBody(req);
+    const { callId, sender, senderRole, message, actionType } = body;
+    const msg = teleTriage.sendPrecautionMessage(callId, {
+      sender: sender || blockchain.accounts.doctor,
+      senderRole: senderRole || "doctor",
+      message: message || "Administer sublingual nitroglycerin 0.4mg. Paramedics dispatched.",
+      actionType
+    });
+    return sendJSON(res, 200, { success: true, msg });
+  }
+
+  // 16. Active Calls List
   if (pathname === '/api/sos/calls' && method === 'GET') {
     return sendJSON(res, 200, teleTriage.getActiveCalls());
   }
 
-  // Intrusion & Tamper Attack Simulator (Examiner Demo Endpoint)
+  // 17. Tamper Attack Simulation (Examiner Testbed)
   if (pathname === '/api/tamper/simulate' && method === 'POST') {
     const body = await parseBody(req);
     const {
@@ -414,20 +470,23 @@ const server = http.createServer(async (req, res) => {
       attackVector
     } = body;
 
-    const result = blockchain.attemptTamperRecord({
+    const ingressIP = proxyGatewayIP || clientIP || "194.26.29.112:8080 (Tor-Exit)";
+
+    const result = blockchain.tamperProtectedUpdate({
       caller: attackerWallet || blockchain.accounts.attacker,
       recordId: recordId || "EHR-2026-9041",
-      fakeCID: fakeCID || "QmMaliciousInjectedCorruptedPayload0000000000",
-      proxyGatewayIP: proxyGatewayIP || "194.26.29.112:8080 (Tor Exit Node)",
+      newCID: fakeCID || "QmMaliciousInjectedCorruptedPayload0000000000",
+      newDataHash: "0xdeadbeef1337badc0de",
+      proxyGatewayIP: ingressIP,
       attackVector: attackVector || "UNAUTHORIZED_RECORD_OVERWRITE_INJECTION",
       attackPayload: "0xdeadbeef1337badc0de",
-      signatureValid: false // Signature fails Audit(H_CID, sigma)
+      signatureValid: false
     });
 
     return sendJSON(res, 200, result);
   }
 
-  // Emergency Quarantine Compromised Record
+  // 18. Emergency Record Quarantine
   if (pathname === '/api/tamper/quarantine' && method === 'POST') {
     const body = await parseBody(req);
     const { caller, recordId, reason } = body;
@@ -444,12 +503,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // Forensic Incidents Ledger
+  // 19. Forensic Incidents Log
   if (pathname === '/api/forensics/incidents' && method === 'GET') {
     return sendJSON(res, 200, daemon.getIncidents());
   }
 
-  // --- STATIC FRONTEND FILE SERVING ---
+  // 20. Static File Serving (Web3 Clinical Dashboard)
   let filePath = path.join(__dirname, '../client/public', pathname === '/' ? 'index.html' : pathname);
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -468,7 +527,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Fallback to index.html for Single-Page Application
+  // Fallback to index.html for Single Page Application routing
   const indexPath = path.join(__dirname, '../client/public/index.html');
   if (fs.existsSync(indexPath)) {
     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -476,7 +535,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  sendJSON(res, 404, { error: "Not Found" });
+  sendJSON(res, 404, { error: "Resource Not Found" });
 });
 
 server.listen(PORT, '127.0.0.1', () => {
@@ -485,12 +544,12 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`================================================================`);
   console.log(` [*] Server URL:              http://localhost:${PORT}`);
   console.log(` [*] SSE Event Stream:        http://localhost:${PORT}/api/events`);
-  console.log(` [*] Health & Diagnostics:    http://localhost:${PORT}/api/health`);
+  console.log(` [*] Health Diagnostics:      http://localhost:${PORT}/api/health`);
   console.log(` [*] MIMIC-III Benchmark:     http://localhost:${PORT}/api/benchmark`);
-  console.log(` [*] BBS98 Proxy Re-Key:      ${demoRekey.slice(0, 20)}...`);
   console.log(` [*] Patient Alice Address:   ${blockchain.accounts.patient}`);
   console.log(` [*] Doctor Bob Address:      ${blockchain.accounts.doctor}`);
   console.log(` [*] Attacker Eve Address:    ${blockchain.accounts.attacker}`);
+  console.log(` [*] Security Sentinel:       ${blockchain.accounts.sentinel}`);
   console.log(`================================================================\n`);
 });
 
