@@ -281,20 +281,20 @@ python benchmark/mimic3_benchmark.py
 [+] Dataset synthesis completed in 0.088s (113,636 records/sec)
 
 [*] Benchmarking BBS98 Proxy Re-Encryption throughput (1,000 trials)...
-[+] BBS98 Keypair Generation:                0.342 ms
-[+] Client-Side AES-256 + BBS98 Encryption:  0.773 ms
-[+] Proxy Re-Encryption Transformation:     0.510 ms
-[+] Doctor Decryption:                       0.365 ms
+[+] BBS98 Keypair Generation:                0.215 ms
+[+] Client-Side AES-256 + BBS98 Encryption:  0.367 ms
+[+] Proxy Re-Encryption Transformation:     0.242 ms
+[+] Doctor Decryption:                       0.173 ms
 
 [*] Benchmarking Emergency SOS Tele-Triage Latency Layers (1,000 trials)...
-[+] Local Application CPU Dispatch (Mean):   0.0127 ms
-[+] Local Application CPU Dispatch (Median): 0.0108 ms
-[+] Local Application CPU Dispatch (P95):    0.0185 ms
-[+] Local Application CPU Dispatch (P99):    0.0523 ms
-[+] Local Application CPU Dispatch (Max):    0.1793 ms
-[+] Synthetic WAN Transit Model (Mean):     31.77 ms
-[+] Synthetic WAN Transit Model (P99):      44.80 ms
-[VERIFIED] Genuine Local CPU Dispatch is SUB-MILLISECOND (< 1.0 ms)!
+[+] Local Telemetry Microbenchmark (Mean):   0.0065 ms
+[+] Local Telemetry Microbenchmark (Median): 0.0056 ms
+[+] Local Telemetry Microbenchmark (P95):    0.0114 ms
+[+] Local Telemetry Microbenchmark (P99):    0.0156 ms
+[+] Local Telemetry Microbenchmark (Max):    0.2449 ms
+[+] Theoretical WAN Transit Model (Mean):     31.37 ms
+[+] Theoretical WAN Transit Model (P99):      44.75 ms
+[VERIFIED] Genuine Local Telemetry Microbenchmark is SUB-MILLISECOND (< 1.0 ms)!
 
 [*] Evaluating Dual-Scenario On-Chain Storage Cost vs Polygon L2 & Ethereum L1:
     [Scenario A] 10,000 Structured Records (2.56 MB):
@@ -308,7 +308,7 @@ python benchmark/mimic3_benchmark.py
 
 [*] Tamper Alert Gas Bound Audit:
     Gas (Simulated Engine): 28,825 gas
-    Gas (Hardhat EVM Node): 30,652 gas (from actual transaction receipt)
+    Gas (Hardhat EVM Node): 30,652 gas (asserted from actual transaction receipt in test/medblock.test.js)
     Target Ceiling Limit:   <= 42,500 gas
     Status:                 COMPLIANT (Margin: 11,848 gas on Hardhat EVM)
 

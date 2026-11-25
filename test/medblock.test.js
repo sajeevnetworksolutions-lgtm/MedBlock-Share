@@ -213,6 +213,7 @@ describe("MedBlock-Share Smart Contract Suite (M.Tech Dissertation Specification
       console.log(`    ===============================================\n`);
 
       expect(gasUsed).to.be.lessThanOrEqual(42500n);
+      expect(gasUsed).to.equal(30652n); // Explicit assertion of the exact Hardhat EVM receipt gas
     });
 
     it("should allow patient to quarantine/freeze compromised record upon forensic alert", async function () {

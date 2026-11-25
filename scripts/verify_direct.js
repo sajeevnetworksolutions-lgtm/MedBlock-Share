@@ -192,7 +192,9 @@ async function runDirectVerification() {
     // -------------------------------------------------------------
     // OBJECTIVE 5: FORENSIC PROXY ALERT DAEMON & DUAL ALERT
     // -------------------------------------------------------------
-    console.log("[*] Objective 5: Testing Forensic Proxy Alert Daemon & Ingress Attribution...");
+    console.log("[*] Objective 5: Testing Forensic Proxy Alert Daemon & Ingress Attribution [SIMULATED IN-MEMORY]...");
+    console.log("    Note: Forensic IP, GeoIP, and Threat Intelligence are simulated in-memory for testing.");
+    console.log("    Attribution identifies network intermediary topology (proxies/Tor), not verifiable physical identity.");
     const daemon = new ForensicAlertDaemon(blockchain, null);
     const forensicReport = await daemon.analyzeTamperEvent(tamperResult.event);
     const dualAlert = await daemon.dispatchDualAlert(forensicReport);
@@ -204,10 +206,10 @@ async function runDirectVerification() {
 
     console.log(`    Incident ID:              ${forensicReport.incidentId}`);
     console.log(`    Attacker Wallet:          ${forensicReport.attackerWallet}`);
-    console.log(`    Attacker Proxy IP:        ${forensicReport.ingressSource.rawProxyIP}`);
-    console.log(`    GeoIP Geolocation:        ${forensicReport.geolocation.city}, ${forensicReport.geolocation.country}`);
+    console.log(`    Attacker Proxy IP:        ${forensicReport.ingressSource.rawProxyIP} (Simulated Ingress Header)`);
+    console.log(`    GeoIP Geolocation:        ${forensicReport.geolocation.city}, ${forensicReport.geolocation.country} (Simulated GeoIP)`);
     console.log(`    Proxy Classification:     ${forensicReport.geolocation.proxyType} (ASN: ${forensicReport.geolocation.asn})`);
-    console.log(`    Threat Intelligence Score:${forensicReport.threatScore} / 100`);
+    console.log(`    Threat Intelligence Score:${forensicReport.threatScore} / 100 (Simulated Threat Heuristic)`);
     console.log(`    Dual Alert Channel 1:     ${dualAlert.patientAlert.channel} -> DISPATCHED to Patient`);
     console.log(`    Dual Alert Channel 2:     ${dualAlert.doctorAlert.channel} -> DISPATCHED to Doctor`);
     console.log(`    Dual Alert Dispatch Time: ${dualAlert.dispatchLatencyMs} ms`);
@@ -216,7 +218,8 @@ async function runDirectVerification() {
     // -------------------------------------------------------------
     // OBJECTIVE 3: 1-CLICK PATIENT EMERGENCY SOS SIGNALING
     // -------------------------------------------------------------
-    console.log("[*] Objective 3: Testing 1-Click Patient Emergency SOS Tele-Triage Signaling...");
+    console.log("[*] Objective 3: Testing 1-Click Patient Emergency SOS Tele-Triage Signaling [IN-MEMORY LOCAL FUNCTIONAL TEST]...");
+    console.log("    Note: In-memory functional test of TeleTriageHub state machine (does not verify physical media streaming).");
     const teleTriage = new TeleTriageHub(null);
     
     // Genuine local execution time measurement (not simulated jitter)
@@ -241,7 +244,7 @@ async function runDirectVerification() {
 
     console.log(`    Emergency Call ID:        ${sosAlert.callId}`);
     console.log(`    Acute Risk Condition:     ${sosAlert.acuteRisk}`);
-    console.log(`    Genuine Local Dispatch:   ${genuineLocalDispatchMs.toFixed(3)} ms (Empirically Measured)`);
+    console.log(`    Local Hub Execution:      ${genuineLocalDispatchMs.toFixed(3)} ms (Empirically Measured)`);
     console.log(`    [SIMULATED SCENARIO]      Modeled WAN Transit Delay: ~18-45 ms (Theoretical cellular transit model)`);
 
     // Doctor Accepts Call & WebRTC signaling
@@ -275,7 +278,7 @@ async function runDirectVerification() {
 
     console.log(`    Total Records:            ${benchData.sample_records}`);
     console.log(`    Crypto Sample Count:      ${benchData.crypto_sample_count} iterations`);
-    console.log(`    Mean SOS CPU Latency:     ${benchData.tele_triage_sos_latencies_ms.mean} ms`);
+    console.log(`    Local Telemetry Microbench:${benchData.tele_triage_sos_latencies_ms.mean} ms`);
     console.log(`    Tamper Alert Receipt Gas: ${benchData.tamper_alert_gas.consumed} gas (Limit <= 42,500 gas)`);
     console.log(`    Scenario A Gas Savings:   ${benchData.economic_cost_analysis.scenario_a_gas_savings_pct}%`);
     console.log(`    Scenario A Polygon Cost:  $${benchData.economic_cost_analysis.scenario_a_polygon_l2_cost_usd} USD`);

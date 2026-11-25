@@ -150,3 +150,28 @@ This changelog records all source code files, smart contracts, test scripts, and
 
 5. **Cross-Repository Documentation Harmonization:**
    - Synchronized `README.md`, `docs/RESEARCH_PAPER.md`, `docs/medblock_share_manuscript.tex`, `docs/PAPER_CORRECTIONS.md`, and all 8 delivery files in `AUDIT_RESULTS/FINAL_DELIVERY/`.
+
+---
+
+## Final Consistency Harmonization Pass (Release v2.2)
+
+1. **Benchmark and Documentation Consistency:**
+   - Treated `benchmark/mimic3_results.json` as the single authoritative source of truth for all recorded measurements.
+   - Synchronized all Markdown, LaTeX, README, and final delivery documentation figures with the actual JSON values ($N = 1,000$ trials: KeyGen 0.215 ms, Encrypt 0.367 ms, Transform 0.242 ms, Decrypt 0.173 ms, total pipeline throughput 0.997 ms).
+
+2. **SOS Latency Terminology:**
+   - Renamed Python benchmark measurement to **local telemetry-processing microbenchmark latency** (0.0065 ms mean, 0.0056 ms median, 0.0156 ms P99), accurately defining its scope: measures CPU JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O).
+   - Identified TeleTriageHub test in `test/e2e_server_pipeline.test.js` as an in-memory local functional test.
+   - Designated the 31.37 ms WAN transit latency as an explicitly theoretical model.
+
+3. **Storage Gas Model:**
+   - Provided explicit derivations for Scenario A's 9,600,000 gas (~960 gas/record amortized batch anchor, vs 200,000,000 gas for 10k individual SSTORE slots) and Scenario B's 84,210 gas (illustrative single-transaction model: 21,000 base + metadata writes + event log).
+   - Reconciled Scenario A's stated 320 KB CID storage as the aggregate 10,000 $\times$ 32-byte cryptographic multihash footprint stored off-chain and referenced on-chain.
+   - Labeled both figures as illustrative scenario assumptions and theoretical gas models rather than measured live Polygon transaction receipts.
+   - Preserved corrected arithmetic under stated assumptions ($33.60 native vs $0.2016 MedBlock for Scenario A; $137.63 native vs $0.0018 MedBlock for Scenario B at 30 Gwei, $3,000/ETH, $0.70/MATIC). Omitted commercial IPFS pinning fees.
+
+4. **Tamper Gas & Forensic Attribution:**
+   - Hardhat EVM receipt gas of 30,652 is strictly asserted in `test/medblock.test.js` via `expect(gasUsed).to.equal(30652n);`.
+   - Explicitly documented that the benchmark script references this constant from Hardhat test receipts and does not independently measure it.
+   - Clearly labeled in-memory forensic IP, GeoIP, and threat-intelligence information as simulated in development/test harnesses (`scripts/verify_direct.js`, `test/comprehensive_suite.test.js`).
+   - Emphasized that IP addresses capture network intermediary topology (reverse proxies, Tor exit nodes), not an attacker's real physical identity.

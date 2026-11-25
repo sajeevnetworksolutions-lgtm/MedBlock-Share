@@ -1,9 +1,9 @@
 # MedBlock-Share: Academic Disclosure of Known Limitations & Production Roadmap
 
 **Document:** `AUDIT_RESULTS/FINAL_DELIVERY/KNOWN_LIMITATIONS.md`  
-**Date:** November 24, 2026  
+**Date:** November 25, 2026  
 **Auditor / Engineer:** DeepMind Autonomous Systems Engineering  
-**Version:** Production Release v2.0  
+**Version:** Production Release v2.2  
 
 ---
 
@@ -38,7 +38,7 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ### 3.1 EVM Revert vs. Event Rollback Dynamics
 * **Limitation:** As formalized in the Ethereum Yellow Paper, an EVM transaction that executes `REVERT` discards all emitted event logs within that execution context.
-* **Implementation Reality:** MedBlock-Share's non-reverting guard (`tamperProtectedUpdate`) rejects unauthorized mutations while completing the transaction cleanly, ensuring the `UnauthorizedTamperAttempt` event persists on-chain at an empirical cost of **28,825 gas**.
+* **Implementation Reality:** MedBlock-Share's non-reverting guard (`tamperProtectedUpdate`) rejects unauthorized mutations while completing the transaction cleanly, ensuring the `UnauthorizedTamperAttempt` event persists on-chain at an empirical cost of **30,652 gas** on Hardhat EVM (**28,825 gas** in simulated engine).
 * **Boundary Condition:** This pattern requires the attacker's transaction to execute successfully on-chain. If an attacker submits a transaction with zero gas, an invalid nonce, or if an outer contract reverts the call, the on-chain event will not be stored.
 * **Dual-Channel Defense:** For transactions that revert externally or are dropped by miners, MedBlock-Share provides the `reportTamperAttempt` sentinel channel, where an authorized watchdog node submits an independent on-chain forensic report.
 
@@ -51,10 +51,11 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ## 4. Network Forensics & IP Attribution Realities
 
-### 4.1 Absence of IP Visibility on Blockchain Ledgers
+### 4.1 Absence of IP Visibility on Blockchain Ledgers & Simulation Notice
 * **Ground Truth:** The Ethereum consensus protocol operates exclusively on cryptographic signatures and transaction payloads. **Smart contracts have zero visibility into IP addresses or network packet headers.**
 * **Attribution Boundary:** MedBlock-Share captures IP addresses at the API Gateway / JSON-RPC reverse proxy ingress boundary (`X-Forwarded-For` header and socket address).
-* **Network Topology vs. Physical Identity:** IP geolocation via GeoIP2 identifies **network routing topology, autonomous system numbers (ASNs), and known Tor exit nodes / VPN gateways**. It **cannot and does not establish verifiable physical human identities**.
+* **Simulation in Test Environments:** In-memory forensic IP, GeoIP, and threat-intelligence information in development and test harnesses (`scripts/verify_direct.js`, `test/comprehensive_suite.test.js`) is explicitly labeled as **simulated**.
+* **Network Topology vs. Physical Identity:** IP geolocation via GeoIP2 identifies **network routing topology, autonomous system numbers (ASNs), and known Tor exit nodes / reverse proxies**. It **captures network intermediary topology, not an attacker's verifiable physical human identity**.
 
 ---
 
@@ -62,9 +63,20 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ### 5.1 Signaling Latency vs. End-to-End Media Establishment
 * **Measurement Reality:** The tele-triage workflow separates local CPU processing, local HTTP transport, and client audiovisual media establishment:
-  1. **Local Application CPU Dispatch:** Empirically measured at **$0.0127 \pm 0.0099$ ms** (median: 0.0108 ms, P95: 0.0185 ms, P99: 0.0523 ms).
-  2. **Local Loopback HTTP Request-Response:** Measured over local TCP sockets at **$12 - 18$ ms** (mean: 14.80 ms).
-  3. **Synthetic WAN/5G Network Transit Model:** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.77 ms mean** (P95: 43.81 ms, P99: 44.80 ms).
+  1. **Local Telemetry-Processing Microbenchmark Latency ($N = 1,000$ Trials):** Measures CPU JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O):
+     - Mean: **0.0065 ms** (6.5 microseconds)
+     - Median: **0.0056 ms**
+     - Std Dev: **0.0080 ms**
+     - Min: 0.0035 ms
+     - Max: 0.2449 ms
+     - P95: **0.0114 ms**
+     - P99: **0.0156 ms**
+  2. **Local Loopback HTTP Request-Response ($N = 50$ Trials):** Measured over local TCP sockets at **12 - 18 ms** (Mean: 14.80 ms, Median: 13.90 ms).
+  3. **Theoretical WAN/5G Network Transit Model ($N = 1,000$ Trials):** Modeled under theoretical wide-area network jitter (18–45 ms transit delay) combined with microbenchmark processing:
+     - Mean: **31.37 ms**
+     - P95: **43.34 ms**
+     - P99: **44.75 ms**
+* **In-Memory Local Functional Testing:** TeleTriageHub tests in `test/e2e_server_pipeline.test.js` provide an **in-memory local functional test** of event dispatch and call state transitions. WAN latency is explicitly theoretical.
 * **WebRTC Media Streaming Boundary:** Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the academic literature.
 * **Clinical Safety & Non-Prescriptive Status:** MedBlock-Share provides automated triage notification and communication signaling, never automated medical prescriptions (e.g., nitroglycerin, aspirin). All emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). All patient records in demonstrations and benchmarks are synthetic data. This software is an academic research prototype and not a certified medical device.
 
@@ -80,17 +92,25 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ## 7. Storage Cost, IPFS Adapter & EVM Tamper Defense Gas
 
-### 7.1 Dual Storage Scenarios
-- **Scenario A (10,000 Structured Records of ~256 Bytes = 2.56 MB):** 1,600,000,000 gas on-chain ($33.60 on Polygon L2, $144,000 on Ethereum L1) vs 9,600,000 gas MedBlock-Share anchor ($0.2016 on Polygon L2, $864 on Ethereum L1) $\to$ **99.40% gas reduction**.
-- **Scenario B (10 MiB Bulk Medical Imaging File):** 6,553,600,000 gas on-chain ($137.63 on Polygon L2, $589,824 on Ethereum L1) vs 84,210 gas Polygon L2 CID anchor ($0.0018 on Polygon L2, $7.58 on Ethereum L1) $\to$ **99.9987% ($\approx$ 100.00%) gas reduction**. External commercial IPFS pinning fees are not modeled as they depend on third-party pinning providers.
+### 7.1 Dual Storage Scenarios & Derivations
+- **Scenario A (10,000 Structured Records of ~256 Bytes = 2.56 MB):**
+  - Native On-chain: $10,000 \times 8 \times 20,000 = 1,600,000,000$ gas ($33.60 on Polygon L2, $144,000 on Ethereum L1).
+  - MedBlock-Share anchor: 9,600,000 gas ($0.2016 on Polygon L2, $864 on Ethereum L1) $\to$ **99.40% gas reduction**.
+  - *Derivation:* 9,600,000 gas is an illustrative scenario assumption modeling ~960 gas/record amortized batch anchoring (vs 200,000,000 gas for 10,000 individual storage slots). Stated 320 KB CID storage represents the aggregate 10,000 $\times$ 32-byte cryptographic multihash footprint stored off-chain and referenced on-chain.
+- **Scenario B (10 MiB Bulk Medical Imaging File):**
+  - Native On-chain: $327,680 \times 20,000 = 6,553,600,000$ gas ($137.63 on Polygon L2, $589,824 on Ethereum L1).
+  - MedBlock-Share anchor: 84,210 gas ($0.0018 on Polygon L2, $7.58 on Ethereum L1) $\to$ **99.9987% ($\approx$ 100.00%) gas reduction**.
+  - *Derivation:* 84,210 gas is an illustrative single-transaction model (21,000 base overhead + metadata writes + `RecordRegistered` event log) for registering the IPFS CID on-chain.
+- Both models are **illustrative scenario assumptions and theoretical gas models** (not measured live Polygon transaction receipts). External commercial IPFS pinning fees are omitted.
 
 ### 7.2 IPFS Adapter Scope
 - `server/ipfs_node.js` provides a local content-addressed storage adapter (IPFS emulation for development).
 - Production deployments connect to a dedicated external Kubo IPFS node or Pinata pinning service. Local unpinning purges data locally, but does not guarantee global deletion across external public IPFS nodes if third-party peers have cached the data.
 
 ### 7.3 Tamper Defense Gas Consumption
-- Hardhat in-process EVM Node (`test/medblock.test.js`): **30,652 gas** receipt (`receipt.status === 1`, state preserved).
+- Hardhat in-process EVM Node (`test/medblock.test.js`): **30,652 gas** receipt (`receipt.status === 1`, state preserved), strictly asserted via `expect(gasUsed).to.equal(30652n);`.
 - Simulated In-Memory Execution Engine: **28,825 gas** ($\le 42,500$ gas limit).
+- The benchmark script references the 30,652 gas constant from Hardhat tests and does not independently measure it.
 
 ---
 

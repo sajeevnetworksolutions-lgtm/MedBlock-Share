@@ -1,6 +1,6 @@
 # MedBlock-Share: Research Paper Audit & Scientific Corrections Record
 
-**Document:** `docs/PAPER_CORRECTIONS.md`  
+**Document:** `AUDIT_RESULTS/FINAL_DELIVERY/PAPER_CORRECTIONS.md`  
 **Reference Synopsis:** *MedBlock-Share: Decentralized Patient-Centric Electronic Health Record Sharing via Proxy Re-Encryption, Emergency Tele-Triage, and Tamper-Alert Proxy Forensics on Ethereum*  
 **Date of Audit & Corrections:** November 24, 2026  
 **Auditing Entity:** Sajeev Network Solutions Engineering & Cryptographic Review Board  
@@ -48,7 +48,7 @@ This document details every specific correction made, contrasting the initial cl
 
 ---
 
-### 3. Emergency Tele-Triage: Measured Application Latency, Synthetic WAN Simulation & WebRTC Boundaries
+### 3. Emergency Tele-Triage: Local Telemetry Microbenchmark, Theoretical WAN Simulation & WebRTC Boundaries
 
 * **Initial Claim in Synopsis:**
   The synopsis reported a "Tele-triage communication latency of 32.2 ms," conflating this figure with the time required to establish a full interactive video call, and benchmark scripts injected artificial transit jitter (`random.uniform(18, 45)`).
@@ -57,15 +57,23 @@ This document details every specific correction made, contrasting the initial cl
   2. Presenting injected synthetic jitter as empirical application latency is scientifically unsound.
 * **Corrected Architecture & Implementation:**
   We formally separated the tele-triage timing layers:
-  1. **Application CPU Dispatch Latency ($T_{\mathrm{proc}}$, $N = 1,000$ Trials):** Genuine local CPU execution for processing the SOS request and broadcasting events:
-     - Mean: **0.0127 ms** (12.7 microseconds)
-     - Median: **0.0108 ms**
-     - Std Dev: **0.0099 ms**
-     - P95: **0.0185 ms**
-     - P99: **0.0523 ms**
-  2. **Local Loopback HTTP Latency ($N = 50$ Trials):** Measured over local TCP sockets at **12 - 18 ms** (Mean: 14.80 ms).
-  3. **Synthetic WAN/5G Network Transit Model ($N = 1,000$ Trials):** Simulated wide-area network jitter (18–45 ms transit delay) modeled at **31.77 ms mean** (P95: 43.81 ms, P99: 44.80 ms).
-  4. **WebRTC Signaling vs. Media Reality:** Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the scientific literature.
+  1. **Local Telemetry-Processing Microbenchmark Latency ($N = 1,000$ Trials):** Genuine local CPU execution for JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O):
+     - Mean: **0.0065 ms** (6.5 microseconds)
+     - Median: **0.0056 ms**
+     - Std Dev: **0.0080 ms**
+     - Min: **0.0035 ms**
+     - Max: **0.2449 ms**
+     - P95: **0.0114 ms**
+     - P99: **0.0156 ms**
+     - Target bound: $\le 380$ ms (**COMPLIANT**)
+  2. **Local Loopback HTTP Latency ($N = 50$ Trials):** Measured over local TCP sockets at **12 - 18 ms** (Mean: 14.80 ms, Median: 13.90 ms, P95: 17.50 ms, P99: 18.20 ms).
+  3. **Theoretical WAN/Cellular Transit Model ($N = 1,000$ Trials):** Modeled under a theoretical 18–45 ms 5G/cellular transit delay combined with local microbenchmark processing:
+     - Mean: **31.37 ms**
+     - P95: **43.34 ms**
+     - P99: **44.75 ms**
+  4. **In-Memory Local Functional Testing & WebRTC Signaling vs. Media Reality:** 
+     - TeleTriageHub tests in `test/e2e_server_pipeline.test.js` provide an **in-memory local functional test** of event dispatch and call state transitions.
+     - Headless server and automated test suites verify the WebRTC signaling handshake (offer, answer, ICE exchange, call state machine, and clinical precaution chat). However, peer-to-peer audiovisual media streaming requires physical camera/microphone hardware and STUN/TURN traversal servers, which remain **unverified in headless server tests**. Unsupported claims of 280–450 ms media negotiation and 325 ± 28 ms clinician availability have been removed from the scientific literature.
 
 ---
 
@@ -91,7 +99,8 @@ This document details every specific correction made, contrasting the initial cl
 * **Corrected Architecture & Implementation:**
   1. We refactored `daemon/forensic_daemon.js` to clarify that ingress IP logging occurs at the **JSON-RPC Provider / Gateway HTTP proxy layer** (`X-Forwarded-For` header and TCP socket remote address).
   2. The daemon correlates the ingress network packet with the transaction hash and wallet address.
-  3. We added an explicit scientific disclosure that IP geolocation identifies **network routing topology, VPNs, proxies, and Tor exit nodes**, not verifiable physical human identities.
+  3. In development and automated test harnesses (`scripts/verify_direct.js`, `test/comprehensive_suite.test.js`), in-memory forensic IP, GeoIP, and threat-intelligence information is explicitly labeled as **simulated**.
+  4. We added an explicit scientific disclosure that IP geolocation identifies **network routing topology, reverse proxies, and Tor exit nodes**, not an attacker's verifiable physical human identity.
 
 ---
 
@@ -100,22 +109,25 @@ This document details every specific correction made, contrasting the initial cl
 * **Initial Claim in Synopsis:**
   The synopsis claimed a 99.4% storage cost reduction without providing transparent arithmetic, mixing small structured records with 10 MiB bulk file formulas.
 * **Corrected Architecture & Implementation:**
-  We formalized two distinct, transparent scenario calculations:
+  We formalized two distinct, transparent scenario calculations labeled as **illustrative scenario assumptions and theoretical gas models** (not measured live Polygon transaction receipts):
   - **Scenario A (10,000 Structured Clinical Records of ~256 Bytes = 2.56 MB):**
     - Total raw data size: 2.56 MB = 80,000 32-byte EVM storage words.
     - Native on-chain storage gas: $80,000 \times 20,000 = 1,600,000,000$ gas ($\approx \$33.60$ on Polygon L2 at 30 Gwei, \$0.70/MATIC; $\$144,000.00$ on Ethereum L1 at 30 Gwei, \$3,000/ETH).
     - MedBlock-Share off-chain IPFS + on-chain CID anchor: $9,600,000$ gas ($\approx \mathbf{\$0.2016}$ on Polygon L2, $\$864.00$ on Ethereum L1).
+    - Derivation & CID Footprint: 9,600,000 gas is an illustrative scenario assumption modeling ~960 gas/record amortized batch anchoring (compared to 200,000,000 gas if allocating 10,000 individual `SSTORE` slots at 20,000 gas each). The stated 320 KB CID storage represents the aggregate 10,000 $\times$ 32-byte cryptographic multihash footprint stored off-chain and referenced on-chain.
     - Gas savings: $\frac{1,600,000,000 - 9,600,000}{1,600,000,000} \times 100\% = \mathbf{99.40\%}$.
     - *Correction Note:* Previously conflated reports listed \$0.0018 for Scenario A on Polygon L2; the exact formula yields $\$0.2016$ ($9,600,000 \times 30 \times 10^{-9} \times 0.70$), while native on-chain storage is $\$33.60$ ($1,600,000,000 \times 30 \times 10^{-9} \times 0.70$).
   - **Scenario B (10 MiB Bulk Medical Imaging / DICOM File = 10,485,760 Bytes):**
     - Total raw data size: 10,485,760 bytes = 327,680 EVM words.
     - Native on-chain storage gas: $327,680 \times 20,000 = 6,553,600,000$ gas ($\approx \$137.63$ on Polygon L2, $\$589,824.00$ on Ethereum L1).
     - MedBlock-Share off-chain IPFS + on-chain CID registration transaction: $84,210$ gas ($\approx \mathbf{\$0.0018}$ on Polygon L2, $\$7.58$ on Ethereum L1).
+    - Derivation: 84,210 gas is an illustrative single-transaction model (21,000 base transaction overhead + metadata state writes + `RecordRegistered` event log) for registering the IPFS CID on-chain.
     - Gas savings: $\frac{6,553,600,000 - 84,210}{6,553,600,000} \times 100\% = \mathbf{99.9987\%}$ ($\approx \mathbf{100.00\%}$).
-    - *Distinction:* Scenario B models a single large transaction anchoring an off-chain imaging payload, distinct from the aggregate 10,000 structured record batch in Scenario A. External commercial IPFS pinning fees are excluded as they depend on third-party pinning providers.
+    - *Distinction:* Scenario B models a single large transaction anchoring an off-chain imaging payload, distinct from the aggregate 10,000 structured record batch in Scenario A. External commercial IPFS pinning fees are omitted as they depend on third-party pinning providers.
   - **Verified Tamper Defense Receipt Gas:**
-    - On Hardhat in-process EVM node (`test/medblock.test.js`): **30,652 gas** with clean non-reverting status `1` (`0x1`).
+    - On Hardhat in-process EVM node (`test/medblock.test.js`): **30,652 gas** with clean non-reverting status `1` (`0x1`), strictly retrieved and asserted via `expect(gasUsed).to.equal(30652n);`.
     - On in-memory simulated execution engine: **28,825 gas** (well below the $\le 42,500$ gas limit).
+    - *Audit Note:* The benchmark script references the 30,652 gas figure as an asserted Hardhat EVM receipt constant and does not independently measure it.
 
 ---
 
@@ -156,6 +168,7 @@ This document details every specific correction made, contrasting the initial cl
   1. Formally documented BBS98 as a research prototype PRE construction with known bidirectionality and collusion boundaries.
   2. Enforced 2048-bit prime subgroup checks ($y^q \equiv 1 \pmod p$) and AES-256-GCM authentication tags to prevent chosen-ciphertext attacks.
   3. Clearly documented the distinction between algebraic unit/integration tests and theoretical reductionist security proofs.
+  4. Cryptographic execution benchmark was conducted over $N = 1,000$ recorded trials in `benchmark/mimic3_benchmark.py`: BBS98 KeyGen (Mean: 0.215 ms, Median: 0.201 ms, P99: 0.336 ms), Client-Side AES-256-GCM + BBS98 Encapsulation (Mean: 0.367 ms, Median: 0.334 ms, P99: 0.651 ms), Proxy Re-Encryption Transform (Mean: 0.242 ms, Median: 0.225 ms, P99: 0.432 ms), Doctor Decryption (Mean: 0.173 ms, Median: 0.155 ms, P99: 0.343 ms), delivering a total pipeline throughput of 0.997 ms (< 1.0 ms).
 
 ---
 

@@ -22,10 +22,10 @@ Traditional Electronic Health Record (EHR) architectures store protected health 
 
 ### Key Architectural Solutions:
 1. **Cryptographically Enforced Key Delegation:** Bulk clinical records are encrypted client-side using random 256-bit symmetric keys under AES-256-GCM. The symmetric key is encapsulated via BBS98 over a cyclic Schnorr prime subgroup ($G_q \subset \mathbb{Z}_p^*$). The semi-trusted proxy transforms ciphertexts ($C_A \to C_B$) using delegated re-encryption keys without learning plaintext records or patient private keys.
-2. **Non-Reverting EVM Tamper Defense Guard (`tamperProtectedUpdate`):** Resolves the EVM revert log rollback flaw. Unauthorized mutations are rejected while state variables are preserved, and the transaction completes cleanly with status `0x1`, permanently anchoring `UnauthorizedTamperAttempt` events in the block log receipt within a strictly bounded gas envelope of **30,652 gas** on Hardhat EVM receipt (**28,825 gas** in-memory simulation, $\le 42,500$ gas limit). An authorized sentinel watchdog channel (`reportTamperAttempt`) captures transactions that fail externally.
-3. **Decoupled 1-Click Emergency Tele-Triage:** When an acute clinical trauma occurs, a 1-click SOS button activates on-chain emergency override and dispatches medical telemetry to on-duty physicians with a genuine local CPU dispatch latency of **0.0127 ms mean** (median: 0.0108 ms, P99: 0.0523 ms), local loopback HTTP latency of **12–18 ms**, and simulated WAN transit of **31.77 ms mean**. WebRTC signaling and clinical guidance chat are verified; audiovisual streaming requires client browser media devices. Neutral clinical triage guidance (*"Emergency notification received. Awaiting assessment by an authorized clinician."*) is provided without automated drug prescribing.
-4. **Transparent Ingress Network Forensics:** Ingress IP headers are captured at the JSON-RPC provider / gateway reverse proxy boundary (`X-Forwarded-For`), resolved via MaxMind GeoIP2, and evaluated for Tor exit node and proxy topology (identifying network routing topology rather than physical individuals).
-5. **Economic Efficiency:** Achieves a **99.40% storage cost reduction** in structured clinical records (Scenario A) and **99.9987% ($\approx 100.00%$) reduction** in bulk imaging files (Scenario B) relative to native on-chain storage.
+2. **Non-Reverting EVM Tamper Defense Guard (`tamperProtectedUpdate`):** Resolves the EVM revert log rollback flaw. Unauthorized mutations are rejected while state variables are preserved, and the transaction completes cleanly with status `0x1`, permanently anchoring `UnauthorizedTamperAttempt` events in the block log receipt within a strictly bounded gas envelope of **30,652 gas** on Hardhat EVM receipt (retrieved and asserted in `test/medblock.test.js`, simulated at **28,825 gas**, $\le 42,500$ gas limit). An authorized sentinel watchdog channel (`reportTamperAttempt`) captures transactions that fail externally.
+3. **Decoupled 1-Click Emergency Tele-Triage:** When an acute clinical trauma occurs, a 1-click SOS button activates on-chain emergency override and dispatches medical telemetry to on-duty physicians. The CPU microbenchmark (measuring JSON serialization, SHA-256 telemetry hashing, and payload preparation) executes with a **local telemetry-processing microbenchmark latency of 0.0065 ms mean** (median: 0.0056 ms, P99: 0.0156 ms), local loopback HTTP latency of **12–18 ms**, and theoretical WAN transit model of **31.37 ms mean**. The separate TeleTriageHub test operates as an in-memory local functional test. WebRTC signaling and clinical guidance chat are verified; audiovisual streaming requires client browser media devices. Neutral clinical triage guidance (*"Emergency notification received. Awaiting assessment by an authorized clinician."*) is provided without automated drug prescribing.
+4. **Transparent Ingress Network Forensics:** Ingress IP headers are captured at the JSON-RPC provider / gateway reverse proxy boundary (`X-Forwarded-For`), resolved via MaxMind GeoIP2, and evaluated for Tor exit node and proxy topology. In-memory forensic attribution is simulated in development/test harnesses and explicitly identifies network routing topology rather than an attacker's real physical identity.
+5. **Economic Efficiency:** Achieves an illustrative **99.40% storage cost reduction** in structured clinical records (Scenario A: $33.60 native vs $0.2016 MedBlock on Polygon L2) and **99.9987% ($\approx 100.00%$) reduction** in bulk imaging files (Scenario B: $137.63 native vs $0.0018 MedBlock on Polygon L2) relative to native on-chain storage.
 
 ---
 
@@ -116,23 +116,26 @@ Evaluated against 10,000 synthetic patient records generated under a **Synthetic
 
 | Metric / Parameter | Native On-Chain Storage | MedBlock-Share (IPFS + On-Chain Anchor) | Performance Verification |
 | :--- | :--- | :--- | :--- |
-| **Scenario A Storage (10,000 Records, 2.56 MB)** | 1,600,000,000 gas (\$33.60 L2 / \$144,000 L1) | 9,600,000 gas (**\$0.2016 L2** / \$864 L1) | **99.40% Gas Reduction** |
-| **Scenario B Storage (10 MiB Bulk Medical Image)** | 6,553,600,000 gas (\$137.63 L2 / \$589,824 L1)| 84,210 gas (**\$0.0018 L2** / \$7.58 L1) | **99.9987% ($\approx$ 100.00%) Reduction** |
-| **Emergency SOS Local CPU Dispatch** | N/A (Manual) | **0.0127 ms Mean** (P99: 0.0523 ms) | **Sub-millisecond ($\le 1.0$ ms)** |
+| **Scenario A Storage (10,000 Records, 2.56 MB)** | 1,600,000,000 gas (\$33.60 L2 / \$144,000 L1) | 9,600,000 gas (**\$0.2016 L2** / \$864 L1) | **99.40% Gas Reduction (Illustrative)** |
+| **Scenario B Storage (10 MiB Bulk Medical Image)** | 6,553,600,000 gas (\$137.63 L2 / \$589,824 L1)| 84,210 gas (**\$0.0018 L2** / \$7.58 L1) | **99.9987% ($\approx$ 100.00%) Reduction (Illustrative)** |
+| **Local Telemetry Microbenchmark Latency** | N/A (Manual) | **0.0065 ms Mean** (P99: 0.0156 ms) | **Sub-millisecond ($\le 1.0$ ms)** |
 | **Emergency SOS Local HTTP Loopback** | N/A | **14.80 ms Mean** (Median: 13.90 ms) | **$\le 50$ ms Bound (PASSED)** |
-| **Emergency SOS Simulated WAN Model** | N/A | **31.77 ms Mean** (P99: 44.80 ms) | **$\le 380$ ms Bound (PASSED)** |
-| **Tamper Defense Cost (Hardhat EVM Receipt)**| Reverts (Logs Lost) | **30,652 gas** (`receipt.status === 1`)| **$\le 42,500$ gas Limit (PASSED)** |
+| **Emergency SOS Theoretical WAN Model** | N/A | **31.37 ms Mean** (P99: 44.75 ms) | **$\le 380$ ms Bound (PASSED)** |
+| **Tamper Defense Cost (Hardhat EVM Receipt)**| Reverts (Logs Lost) | **30,652 gas** (Asserted in `test/medblock.test.js`)| **$\le 42,500$ gas Limit (PASSED)** |
 | **Tamper Defense Cost (Simulated Engine)** | Reverts (Logs Lost) | **28,825 gas** (Log Persisted) | **$\le 42,500$ gas Limit (PASSED)** |
-| **BBS98 PRE Key Generation (1,000 Trials)** | N/A | **0.342 ms Mean** (P99: 0.835 ms) | **Sub-millisecond Throughput** |
-| **AES-256-GCM Envelope Encryption (1,000 Trials)**| N/A | **0.773 ms Mean** (P99: 1.523 ms) | **Sub-millisecond Throughput** |
-| **BBS98 PRE Transformation (1,000 Trials)** | N/A | **0.510 ms Mean** (P99: 1.002 ms) | **Sub-millisecond Throughput** |
-| **Delegatee AES-GCM Decryption (1,000 Trials)** | N/A | **0.365 ms Mean** (P99: 0.797 ms) | **Sub-millisecond Throughput** |
+| **BBS98 PRE Key Generation (1,000 Trials)** | N/A | **0.215 ms Mean** (P99: 0.336 ms) | **Sub-millisecond Throughput** |
+| **AES-256-GCM Envelope Encryption (1,000 Trials)**| N/A | **0.367 ms Mean** (P99: 0.651 ms) | **Sub-millisecond Throughput** |
+| **BBS98 PRE Transformation (1,000 Trials)** | N/A | **0.242 ms Mean** (P99: 0.432 ms) | **Sub-millisecond Throughput** |
+| **Delegatee AES-GCM Decryption (1,000 Trials)** | N/A | **0.173 ms Mean** (P99: 0.343 ms) | **Sub-millisecond Throughput** |
 
-> **Operational Disclosures & Boundaries:**
-> - **Storage Cost Assumptions:** Calculated at 30 Gwei gas price, $3,000/ETH, and $0.70/MATIC (POL). Storage gas is modeled under EVM SSTORE semantics (20,000 gas per 32-byte word). These figures represent theoretical cost models and do not include unmeasured third-party IPFS pinning fees.
-> - **WebRTC Media Boundary:** The backend and test suite verify the WebRTC signaling handshake, session lifecycle, and clinical text precaution channel. Physical peer-to-peer audiovisual streaming requires client capture hardware and STUN/TURN traversal servers (unverified in headless server tests).
-> - **IPFS Adapter:** `server/ipfs_node.js` provides local content-addressed storage for development; production deployments integrate with Kubo or Pinata.
-> - **Cryptographic Model:** BBS98 is bidirectional and vulnerable to delegatee-proxy collusion. Re-encryption keys are short-lived and access-controlled. Algebraic test verification does not constitute a formal reductionist security proof.
+> **Operational Disclosures, Derivations & Boundaries:**
+> - **Source of Truth:** All empirical cryptographic and microbenchmark figures are synchronized directly from `benchmark/mimic3_results.json` (executed against 10,000 synthetic records and 1,000 crypto iterations).
+> - **Storage Gas Derivations:** 
+>   - *Scenario A:* 10,000 records $\times$ 8 words $\times$ 20,000 gas = 1,600,000,000 gas native on-chain. Stated 320 KB CID storage represents the aggregate 10,000 $\times$ 32-byte hash footprint stored off-chain/referenced. Storing 10k individual SSTORE slots on-chain would cost 200,000,000 gas; 9,600,000 gas is an **illustrative scenario assumption** (~960 gas/record amortized batch anchor, yielding \$0.2016 at 30 Gwei and \$0.70/MATIC).
+>   - *Scenario B:* 84,210 gas is an **illustrative single-transaction model** (21,000 base + metadata writes + event log) for registering the IPFS CID on-chain.
+>   - *Cost Distinction:* These figures represent theoretical scenario calculations under stated assumptions (30 Gwei, \$3,000/ETH, \$0.70/MATIC), not live Polygon transaction receipts. Commercial IPFS pinning fees are omitted.
+> - **Latency Scope:** The Python microbenchmark measures local CPU JSON serialization, SHA-256 telemetry hashing, and payload preparation. It does not measure complete SOS application dispatch or network I/O. WAN latency (31.37 ms) is a theoretical network model. The separate TeleTriageHub test is an in-memory local functional test.
+> - **Tamper Gas & Attribution:** The 30,652 gas value is an actual transaction receipt retrieved and asserted in `test/medblock.test.js`; the benchmark script references this asserted value. In-memory forensic IP, GeoIP, and Threat Score in test harnesses are simulated. IP addresses identify network routing topology (reverse proxies/Tor), never an attacker's real physical identity.
 > - **Clinical Safety:** All demonstration records are synthetic. Emergency notifications emit neutral clinical triage notices (*"Emergency notification received. Awaiting assessment by an authorized clinician"*). Autonomous drug prescribing is strictly avoided. This software is an academic research prototype and not certified as a medical device.
 
 ---

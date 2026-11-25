@@ -97,7 +97,8 @@ In `contracts/MedBlockRegistry.sol`, we designed `tamperProtectedUpdate`:
 ### 3.1 Reality of Forensic IP Attribution
 - **Cryptographic Ground Truth:** The Ethereum protocol and smart contracts have no native knowledge of IP addresses. Any claim that a smart contract independently discovers an attacker's IP is false.
 - **Implementation Reality:** MedBlock-Share captures the network ingress layer at the API Gateway / JSON-RPC reverse proxy boundary. The captured IP is resolved via GeoIP2 and evaluated for Tor exit node and proxy signatures.
-- **Forensic Scope:** Attribution identifies **network routing topology and egress nodes**, not physical human identities. VPNs, proxies, and shared NAT gateways are explicitly acknowledged.
+- **Simulation in Test Harnesses:** In development and automated test suites (`scripts/verify_direct.js`, `test/comprehensive_suite.test.js`), in-memory forensic IP, GeoIP, and threat-intelligence information is explicitly labeled as **simulated**.
+- **Forensic Scope:** Attribution identifies **network routing topology, reverse proxies, and egress nodes**, not an attacker's verifiable physical human identity. VPNs, proxies, Tor exit nodes, and shared NAT gateways are explicitly acknowledged.
 
 ### 3.2 Storage Adapter & Cryptographic Boundaries
 - **IPFS Adapter Scope:** `server/ipfs_node.js` serves as a local content-addressed storage adapter (IPFS emulation for development). In production deployments, it connects to a dedicated external Kubo IPFS node or Pinata pinning service. Local unpinning purges data locally, but does not guarantee complete deletion across external public IPFS nodes if third-party peers have cached the data.

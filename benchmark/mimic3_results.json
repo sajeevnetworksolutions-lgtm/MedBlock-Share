@@ -1,15 +1,17 @@
 {
-  "timestamp": 1795622503,
+  "timestamp": 1795624469,
   "benchmark_type": "Synthetic ICU-Like Clinical Scenario Benchmark",
   "dataset_description": "10,000 synthetic patient records with standard ICU vital-sign distributions (non-restricted demonstration data)",
   "sample_records": 10000,
-  "payload_volume_bytes": 3971398,
+  "payload_volume_bytes": 3969527,
   "crypto_sample_count": 1000,
   "tele_triage_sos_latencies_ms": {
-    "mean": 0.0099,
-    "p95": 0.0121,
-    "p99": 0.0488,
-    "modeled_wan_mean": 31.62,
+    "measurement_type": "local telemetry-processing microbenchmark latency",
+    "description": "Measures CPU JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O)",
+    "mean": 0.0065,
+    "p95": 0.0114,
+    "p99": 0.0156,
+    "modeled_wan_mean": 31.37,
     "target_bound": 380,
     "compliant": true
   },
@@ -38,43 +40,46 @@
   },
   "crypto_latencies_ms": {
     "sample_count": 1000,
-    "bbs98_keygen_mean": 0.3393,
-    "bbs98_keygen_median": 0.243,
-    "bbs98_keygen_p99": 0.788,
-    "aes_bbs98_encryption_mean": 0.5871,
-    "aes_bbs98_encryption_median": 0.4238,
-    "aes_bbs98_encryption_p99": 1.4333,
-    "proxy_re_encryption_mean": 0.3874,
-    "proxy_re_encryption_median": 0.2822,
-    "proxy_re_encryption_p99": 0.9544,
-    "doctor_decryption_mean": 0.2738,
-    "doctor_decryption_median": 0.1937,
-    "doctor_decryption_p99": 0.7712
+    "bbs98_keygen_mean": 0.2146,
+    "bbs98_keygen_median": 0.2009,
+    "bbs98_keygen_p99": 0.3361,
+    "aes_bbs98_encryption_mean": 0.3672,
+    "aes_bbs98_encryption_median": 0.3338,
+    "aes_bbs98_encryption_p99": 0.651,
+    "proxy_re_encryption_mean": 0.242,
+    "proxy_re_encryption_median": 0.2253,
+    "proxy_re_encryption_p99": 0.4315,
+    "doctor_decryption_mean": 0.1731,
+    "doctor_decryption_median": 0.155,
+    "doctor_decryption_p99": 0.3425
   },
   "emergency_sos_latencies": {
-    "genuine_local_application_processing_ms": {
+    "local_telemetry_processing_microbenchmark_ms": {
+      "description": "Measures CPU JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O)",
       "sample_count": 1000,
-      "mean": 0.0099,
-      "median": 0.0085,
-      "std_dev": 0.007,
-      "min": 0.0073,
-      "max": 0.1406,
-      "p95": 0.0121,
-      "p99": 0.0488,
+      "mean": 0.0065,
+      "median": 0.0056,
+      "std_dev": 0.008,
+      "min": 0.0035,
+      "max": 0.2449,
+      "p95": 0.0114,
+      "p99": 0.0156,
       "target_bound_ms": 380,
       "compliant": true
     },
     "theoretical_wan_cellular_model_ms": {
-      "description": "Local CPU latency + modeled 18-45 ms 5G/cellular transit delay",
+      "description": "Local microbenchmark latency + theoretical 18-45 ms 5G/cellular transit delay model",
       "sample_count": 1000,
-      "mean": 31.62,
-      "p95": 43.68,
-      "p99": 44.78
+      "mean": 31.37,
+      "p95": 43.34,
+      "p99": 44.75
     }
   },
   "storage_cost_scenario_analysis": {
+    "model_classification": "Illustrative scenario assumptions and theoretical gas models (not measured live Polygon transaction receipts)",
     "scenario_a_10000_records": {
       "description": "10,000 structured clinical EHR records (~256 bytes each = 2.56 MB total)",
+      "derivation_notes": "Native on-chain: 10,000 * 8 words * 20,000 gas = 1,600,000,000 gas. MedBlock anchor: 9,600,000 gas is an illustrative scenario assumption (~960 gas/record amortized batch anchor, vs 200,000,000 gas for 10k individual SSTORE slots). Stated 320 KB CID storage represents 10k * 32-byte hash footprint.",
       "total_records": 10000,
       "native_onchain_storage_gas": 1600000000,
       "native_onchain_cost_eth_l1_usd": 144000.0,
@@ -87,6 +92,7 @@
     },
     "scenario_b_10mb_bulk_file": {
       "description": "Single 10 MiB bulk imaging/DICOM file (10,485,760 bytes = 327,680 words)",
+      "derivation_notes": "Native on-chain: 327,680 words * 20,000 gas = 6,553,600,000 gas. MedBlock anchor: 84,210 gas is an illustrative single-transaction model (21,000 base + metadata writes + event log) for registering the IPFS CID on-chain.",
       "file_size_bytes": 10485760,
       "native_l1_gas": 6553600000,
       "native_l1_cost_usd": 589824.0,
@@ -99,6 +105,7 @@
     }
   },
   "tamper_defense_gas_audit": {
+    "verification_note": "Imported constant reference asserted from actual Hardhat EVM receipt in test/medblock.test.js (not independently measured by benchmark script)",
     "hardhat_evm_receipt_gas": 30652,
     "target_bound_ceiling": 42500,
     "margin_below_bound": 11848,
@@ -128,10 +135,10 @@
     },
     {
       "framework": "MedBlock-Share (Research Prototype)",
-      "emergency_response": "Sub-millisecond local dispatch (0.010 ms local / 31.6 ms modeled WAN)",
-      "tamper_detection": "Non-Reverting Persistent Event (30,652 gas)",
-      "storage_cost_10mb": "$0.0018 USD (Off-Chain CID Anchor)",
-      "attacker_attribution": "Ingress Proxy IP + ECDSA Signature (Network Topology)"
+      "emergency_response": "Sub-millisecond local telemetry microbenchmark (0.0065 ms CPU / 31.4 ms modeled WAN)",
+      "tamper_detection": "Non-Reverting Persistent Event (30,652 gas receipt asserted on Hardhat EVM)",
+      "storage_cost_10mb": "$0.0018 USD (Illustrative Off-Chain CID Anchor)",
+      "attacker_attribution": "Reverse Proxy Ingress IP + ECDSA Signature (Simulated Network Topology, Not Real Identity)"
     }
   ]
 }
