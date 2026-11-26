@@ -96,18 +96,19 @@ Emergency SOS Local Telemetry Microbenchmark Latency (1,000 Trials):
 
 ---
 
-## 4. Benchmark 3: EVM Tamper Defense Gas Consumption
+## 4. Benchmark 3: EVM Tamper Defense Gas Consumption & Functional Verification
 
-The gas consumption of the non-reverting `tamperProtectedUpdate` pattern was evaluated on Hardhat's in-process EVM node and the simulated execution engine.
+The tamper defense mechanism was evaluated across two complementary channels on Hardhat's in-process EVM node and the simulated execution engine:
 
-| Execution Environment | Method Invoked | Transaction Status | Emitted Event | Gas Consumed | Target Ceiling |
+| Execution Environment | Method Evaluated | Transaction Status | Emitted Event | Gas Consumed / Verification | Target Ceiling |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Hardhat EVM Node (`test/medblock.test.js`)** | `tamperProtectedUpdate` | **`0x1` (Success)** | `UnauthorizedTamperAttempt` | **30,652 gas** | $\le 42,500$ gas (**PASSED**) |
-| **Simulated In-Memory EVM Engine** | `tamperProtectedUpdate` | **`0x1` (Success)** | `UnauthorizedTamperAttempt` | **28,825 gas** | $\le 42,500$ gas (**PASSED**) |
+| **Hardhat EVM Node (`test/medblock.test.js`)** | `emitTamperAlert` | **`0x1` (Success)** | `UnauthorizedTamperAttempt` | **30,652 gas** (Asserted receipt) | $\le 42,500$ gas (**PASSED**) |
+| **Hardhat EVM Node (`test/medblock.test.js`)** | `tamperProtectedUpdate` | **`0x1` (Success)** | `UnauthorizedTamperAttempt` | **Functionally Verified (State preserved)** | Non-reverting execution (**PASSED**) |
+| **Simulated In-Memory EVM Engine** | Tamper Alert Logging | **`0x1` (Success)** | `UnauthorizedTamperAttempt` | **28,825 gas** | $\le 42,500$ gas (**PASSED**) |
 
-*Note: In `test/medblock.test.js`, the 30,652 gas receipt is strictly retrieved and asserted via `expect(gasUsed).to.equal(30652n);`. The benchmark script references this constant and does not independently measure it.*
+*Note: In `test/medblock.test.js`, the exact 30,652 gas receipt assertion belongs to `emitTamperAlert()`, strictly asserted via `expect(gasUsed).to.equal(30652n);`. `tamperProtectedUpdate()` is functionally tested for non-reverting execution (`receipt.status === 1`), persistent `UnauthorizedTamperAttempt` event emission, and record-state preservation (`record.ipfsCID` unmodified). The benchmark script references the 30,652 gas constant from Hardhat test receipts and does not independently measure it.*
 
-### Detailed Gas Breakdown:
+### Detailed Gas Breakdown for `emitTamperAlert`:
 - Base transaction overhead: 21,000 gas
 - Storage lookup (`SLOAD` cold/warm): ~2,200 gas
 - Memory & stack operations (`viaIR: true`): ~240 gas
@@ -126,7 +127,9 @@ Cryptographic execution timings were evaluated across $N = 1,000$ recorded trial
 | **AES-256-GCM Envelope Encrypt** | 256-bit Key + BBS98 Encapsulation | 0.367 ms | 0.334 ms | 0.651 ms | Sub-millisecond |
 | **Proxy Re-Encryption Transform** | Modular Exponentiation ($G_q$) | 0.242 ms | 0.225 ms | 0.432 ms | Sub-millisecond |
 | **Doctor Record Decrypt & Verify** | Exponentiation + AES-GCM Tag Verify | 0.173 ms | 0.155 ms | 0.343 ms | Sub-millisecond |
-| **Total Cryptographic Pipeline** | Client-Side $\to$ Proxy $\to$ Client-Side | **0.997 ms** | **0.915 ms** | **1.762 ms** | **High-Throughput (< 1.0 ms)** |
+| **Sum of Mean Component Latencies** | Arithmetic sum of operation means | **0.997 ms** | **0.915 ms** | **1.762 ms** | **Arithmetic Sum (< 1.0 ms; not timed end-to-end)** |
+
+*Note: The 0.997 ms figure is the arithmetic sum of the four individual operation means (0.215 + 0.367 + 0.242 + 0.173 ms), not an independently measured end-to-end sequence latency.*
 
 ---
 
@@ -135,6 +138,6 @@ Cryptographic execution timings were evaluated across $N = 1,000$ recorded trial
 All empirical measurements confirm the technical soundness of MedBlock-Share:
 - **99.40% to 99.9987% storage gas reduction** eliminates blockchain economic barriers for clinical EHRs under illustrative models.
 - **0.0065 ms local telemetry microbenchmark latency** enables instantaneous CPU preparation of emergency alert payloads.
-- **30,652 gas tamper logging on Hardhat EVM** resolves EVM log rollback without gas vulnerability.
-- **Sub-millisecond individual cryptographic operations (0.997 ms total pipeline)** deliver seamless doctor-patient interactions.
+- **30,652 gas alert logging on Hardhat EVM for `emitTamperAlert` alongside non-reverting `tamperProtectedUpdate` state preservation** resolves EVM log rollback without gas vulnerability.
+- **Sub-millisecond individual cryptographic operations (0.997 ms sum of mean component latencies)** deliver seamless doctor-patient interactions.
 - **Transparent operational disclosures** delineate simulated development adapters from production infrastructure.

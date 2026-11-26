@@ -2,8 +2,8 @@
 
 **Document:** `AUDIT_RESULTS/FINAL_DELIVERY/KNOWN_LIMITATIONS.md`  
 **Date:** November 25, 2026  
-**Auditor / Engineer:** DeepMind Autonomous Systems Engineering  
-**Version:** Production Release v2.2  
+**Engineering Entity:** Sajeev Network Solutions Engineering  
+**Version:** Academic Research Prototype v2.2  
 
 ---
 
@@ -38,7 +38,7 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 
 ### 3.1 EVM Revert vs. Event Rollback Dynamics
 * **Limitation:** As formalized in the Ethereum Yellow Paper, an EVM transaction that executes `REVERT` discards all emitted event logs within that execution context.
-* **Implementation Reality:** MedBlock-Share's non-reverting guard (`tamperProtectedUpdate`) rejects unauthorized mutations while completing the transaction cleanly, ensuring the `UnauthorizedTamperAttempt` event persists on-chain at an empirical cost of **30,652 gas** on Hardhat EVM (**28,825 gas** in simulated engine).
+* **Implementation Reality:** MedBlock-Share's non-reverting guard (`tamperProtectedUpdate`) rejects unauthorized mutations while completing the transaction cleanly, ensuring the `UnauthorizedTamperAttempt` event persists on-chain. Dedicated alert logging via `emitTamperAlert` consumes **30,652 gas** on Hardhat EVM receipt (**28,825 gas** in simulated engine).
 * **Boundary Condition:** This pattern requires the attacker's transaction to execute successfully on-chain. If an attacker submits a transaction with zero gas, an invalid nonce, or if an outer contract reverts the call, the on-chain event will not be stored.
 * **Dual-Channel Defense:** For transactions that revert externally or are dropped by miners, MedBlock-Share provides the `reportTamperAttempt` sentinel channel, where an authorized watchdog node submits an independent on-chain forensic report.
 
@@ -107,10 +107,10 @@ A hallmark of rigorous scientific engineering is the transparent disclosure of t
 - `server/ipfs_node.js` provides a local content-addressed storage adapter (IPFS emulation for development).
 - Production deployments connect to a dedicated external Kubo IPFS node or Pinata pinning service. Local unpinning purges data locally, but does not guarantee global deletion across external public IPFS nodes if third-party peers have cached the data.
 
-### 7.3 Tamper Defense Gas Consumption
-- Hardhat in-process EVM Node (`test/medblock.test.js`): **30,652 gas** receipt (`receipt.status === 1`, state preserved), strictly asserted via `expect(gasUsed).to.equal(30652n);`.
+### 7.3 Tamper Defense Gas Consumption & Functional Verification
+- Hardhat in-process EVM Node (`test/medblock.test.js`): **30,652 gas** receipt strictly retrieved and asserted for `emitTamperAlert` via `expect(gasUsed).to.equal(30652n);`. `tamperProtectedUpdate` is functionally tested for non-reverting execution (`receipt.status === 1`), event emission, and record-state preservation.
 - Simulated In-Memory Execution Engine: **28,825 gas** ($\le 42,500$ gas limit).
-- The benchmark script references the 30,652 gas constant from Hardhat tests and does not independently measure it.
+- The benchmark script references the 30,652 gas constant from Hardhat test receipts and does not independently measure it.
 
 ---
 

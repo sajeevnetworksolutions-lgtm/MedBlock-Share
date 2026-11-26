@@ -34,9 +34,11 @@
     "scenario_b_native_l1_cost_usd": 589824.0
   },
   "tamper_alert_gas": {
+    "method": "emitTamperAlert()",
     "consumed": 30652,
     "bound": 42500,
-    "compliant": true
+    "compliant": true,
+    "attribution_note": "30,652 gas is the asserted Hardhat EVM receipt for emitTamperAlert() in test/medblock.test.js. tamperProtectedUpdate() is functionally tested for non-reverting execution, event persistence, and record-state preservation."
   },
   "crypto_latencies_ms": {
     "sample_count": 1000,
@@ -51,7 +53,9 @@
     "proxy_re_encryption_p99": 0.4315,
     "doctor_decryption_mean": 0.1731,
     "doctor_decryption_median": 0.155,
-    "doctor_decryption_p99": 0.3425
+    "doctor_decryption_p99": 0.3425,
+    "sum_of_mean_component_latencies": 0.9969,
+    "sum_of_mean_component_latencies_note": "Arithmetic sum of the four separate operation means (0.2146 + 0.3672 + 0.2420 + 0.1731 = 0.9969 ms ~0.997 ms); arithmetic sum of component means, not an independently timed end-to-end pipeline latency"
   },
   "emergency_sos_latencies": {
     "local_telemetry_processing_microbenchmark_ms": {
@@ -105,7 +109,8 @@
     }
   },
   "tamper_defense_gas_audit": {
-    "verification_note": "Imported constant reference asserted from actual Hardhat EVM receipt in test/medblock.test.js (not independently measured by benchmark script)",
+    "target_method": "emitTamperAlert()",
+    "verification_note": "Imported constant reference asserted from actual Hardhat EVM receipt for emitTamperAlert() in test/medblock.test.js (not independently measured by benchmark script). tamperProtectedUpdate() is functionally tested for non-reverting execution, event persistence, and record-state preservation without a separate gas assertion.",
     "hardhat_evm_receipt_gas": 30652,
     "target_bound_ceiling": 42500,
     "margin_below_bound": 11848,
@@ -113,32 +118,36 @@
   },
   "comparative_summary": [
     {
-      "framework": "Traditional Cloud EHR",
-      "emergency_response": "15 - 30 minutes (Manual)",
-      "tamper_detection": "Passive Centralized Audit Log",
-      "storage_cost_10mb": "$0.0002 / mo (AWS S3)",
-      "attacker_attribution": "Server Ingress Log Only"
+      "framework": "Traditional Cloud EHR (Illustrative Baseline)",
+      "emergency_response": "Manual notification workflow (illustrative scenario estimate: 15-30 min)",
+      "tamper_detection": "Centralized database audit logs (susceptible to privileged insider modification)",
+      "storage_cost_10mb": "~$0.00023 / month (standard AWS S3 pricing at $0.023/GB/month for off-chain storage)",
+      "attacker_attribution": "Application server ingress log only (reverse proxy IP / socket header)",
+      "basis": "Illustrative architectural comparison; not an empirical measurement and excluded from empirical conclusions"
     },
     {
       "framework": "Standard Ethereum EHR (Full On-Chain)",
-      "emergency_response": "No Real-Time Tele-Triage",
-      "tamper_detection": "Reverts Execution (Logs Rolled Back)",
-      "storage_cost_10mb": ">$589,824.00 USD (Prohibitive)",
-      "attacker_attribution": "Caller Wallet Address Only"
+      "emergency_response": "No built-in real-time tele-triage signaling",
+      "tamper_detection": "Transaction reverts on failure (state restored, log topics discarded per EVM spec)",
+      "storage_cost_10mb": ">$589,824.00 USD (calculated at 327,680 SSTORE words, 30 Gwei, $3,000/ETH)",
+      "attacker_attribution": "msg.sender wallet address only (no network IP visibility in EVM state)",
+      "basis": "Theoretical EVM Cancun gas model (20,000 gas/word SSTORE)"
     },
     {
-      "framework": "Hyperledger Permissioned Baseline",
-      "emergency_response": "Manual Push Notification",
-      "tamper_detection": "Channel Rejection",
-      "storage_cost_10mb": "$0.04 / tx (Consortium Node)",
-      "attacker_attribution": "Organization Node ID"
+      "framework": "Hyperledger Permissioned Baseline (Illustrative Baseline)",
+      "emergency_response": "Consortium-managed notification channel (illustrative scenario estimate)",
+      "tamper_detection": "Endorsement policy rejection / MSP credential enforcement",
+      "storage_cost_10mb": "Illustrative enterprise consortium infrastructure cost; depends on private node hosting model",
+      "attacker_attribution": "Membership Service Provider (MSP) X.509 organization certificate identity",
+      "basis": "Illustrative literature baseline; not directly measured in this benchmark and excluded from empirical conclusions"
     },
     {
-      "framework": "MedBlock-Share (Research Prototype)",
-      "emergency_response": "Sub-millisecond local telemetry microbenchmark (0.0065 ms CPU / 31.4 ms modeled WAN)",
-      "tamper_detection": "Non-Reverting Persistent Event (30,652 gas receipt asserted on Hardhat EVM)",
-      "storage_cost_10mb": "$0.0018 USD (Illustrative Off-Chain CID Anchor)",
-      "attacker_attribution": "Reverse Proxy Ingress IP + ECDSA Signature (Simulated Network Topology, Not Real Identity)"
+      "framework": "MedBlock-Share (Academic Research Prototype)",
+      "emergency_response": "Local telemetry-processing microbenchmark (0.0065 ms CPU / 31.4 ms modeled WAN)",
+      "tamper_detection": "Non-reverting state defense (tamperProtectedUpdate) + emitTamperAlert (30,652 gas receipt asserted on Hardhat EVM)",
+      "storage_cost_10mb": "$0.0018 USD (illustrative single-transaction off-chain CID anchor at 84,210 gas)",
+      "attacker_attribution": "Reverse proxy ingress IP + ECDSA signature (simulated network topology, not real physical identity)",
+      "basis": "Empirical prototype measurements and theoretical gas models"
     }
   ]
 }

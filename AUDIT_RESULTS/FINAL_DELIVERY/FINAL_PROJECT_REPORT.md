@@ -3,8 +3,8 @@
 **Project Title:** MedBlock-Share: Decentralized Patient-Centric Electronic Health Record Sharing via Proxy Re-Encryption, Emergency Tele-Triage, and Tamper-Alert Proxy Forensics on Ethereum  
 **Organization / Repository:** Sajeev Network Solutions (`sajeevnetworksolutions-lgtm/MedBlock-Share`)  
 **Audit & Engineering Date:** November 25, 2026  
-**Auditor / Lead Engineer:** DeepMind Autonomous Systems Engineering  
-**Version:** Production Release v2.2  
+**Engineering Entity:** Sajeev Network Solutions Research Review  
+**Version:** Academic Research Prototype v2.2  
 
 ---
 
@@ -23,7 +23,7 @@ The project addresses the fundamental conflict in medical informatics: the need 
    - 1-Click Emergency SOS tele-triage with sub-millisecond local telemetry microbenchmark processing (0.0065 ms mean CPU prep), ~14.8 ms local HTTP, theoretical WAN transit (31.37 ms), and WebRTC signaling lifecycle verification with neutral clinical triage guidance.
    - Real-time forensic tamper monitoring capturing RPC gateway ingress packets, GeoIP2 resolution, and Tor exit classification (with explicit disclosure that in-memory data in test harnesses is simulated and reflects network topology, not physical identity).
 2. **Resolution of Core EVM Paradox:**
-   - Solved the EVM revert log rollback issue by creating a non-reverting state preservation pattern (`tamperProtectedUpdate`) that preserves persistent on-chain `UnauthorizedTamperAttempt` event emissions within a bounded gas envelope: **30,652 gas** on Hardhat in-process EVM receipt (strictly asserted via `expect(gasUsed).to.equal(30652n);`), and **28,825 gas** simulated, strictly $\le 42,500$ gas limit.
+   - Solved the EVM revert log rollback issue by creating a non-reverting state preservation pattern (`tamperProtectedUpdate` functionally verified for non-reverting execution, event persistence, and record preservation), alongside a strictly bounded alert emission gas envelope for `emitTamperAlert`: **30,652 gas** on Hardhat in-process EVM receipt (strictly asserted via `expect(gasUsed).to.equal(30652n);`), and **28,825 gas** simulated, strictly $\le 42,500$ gas limit.
 3. **Rigorous Cryptographic Refactoring:**
    - Enforced Schnorr prime-order subgroup membership ($g^q \equiv 1 \pmod p$) in both Python and Node.js BBS98 implementations.
    - Integrated AES-256-GCM authenticated envelope encryption with explicit 128-bit authentication tag verification to prevent padding and ciphertext manipulation attacks.
@@ -87,7 +87,7 @@ The project addresses the fundamental conflict in medical informatics: the need 
 | :--- | :--- | :--- | :--- |
 | **Python BBS98 PRE** | `crypto_pre/bbs98_pre.py` | Complete & Refactored | Prime-order validation, self-test executed cleanly |
 | **Node.js BBS98 PRE** | `crypto_pre/bbs98.js` | Complete & Refactored | BigInt subgroup arithmetic, AES-GCM envelope verified |
-| **Smart Contract** | `contracts/MedBlockRegistry.sol` | Complete & Refactored | Non-reverting tamper defense guard, 30,652 gas receipt |
+| **Smart Contract** | `contracts/MedBlockRegistry.sol` | Complete & Refactored | Non-reverting tamper defense guard, 30,652 gas alert receipt |
 | **Blockchain Engine**| `server/blockchain_engine.js` | Complete & Refactored | Full synchronization with Solidity contract ABI |
 | **Forensic Daemon** | `daemon/forensic_daemon.js` | Complete & Refactored | Ingress header capture, GeoIP mapping, Tor detection |
 | **Tele-Triage Hub** | `tele_triage/tele_triage_hub.js` | Complete & Refactored | WebRTC signaling separation, lifecycle management |
@@ -110,8 +110,9 @@ The project addresses the fundamental conflict in medical informatics: the need 
   - Local Loopback HTTP: **14.80 ms mean** $\le 50$ ms (**PASSED**)
   - Theoretical WAN Model: **31.37 ms mean** (P99: 44.75 ms) $\le 380$ ms (**COMPLIANT**)
   - *Note:* TeleTriageHub tests in `test/e2e_server_pipeline.test.js` represent an in-memory local functional test. WAN latency is theoretical. Headless media streaming is unverified.
-- **Tamper Defense Execution Cost:**
-  - Hardhat EVM Receipt Gas: **30,652 gas** asserted in `test/medblock.test.js` (`receipt.status === 1`, state preserved)
+- **Tamper Defense Execution Cost & Functional Verification:**
+  - Hardhat EVM Receipt Gas: **30,652 gas** for `emitTamperAlert` asserted in `test/medblock.test.js` (`expect(gasUsed).to.equal(30652n);`, bounded by $\le 42,500$ gas).
+  - `tamperProtectedUpdate`: Functionally tested in `test/medblock.test.js` (`receipt.status === 1`, state preserved, `UnauthorizedTamperAttempt` event emitted).
   - Simulated Execution Engine: **28,825 gas**
   - Theoretical Upper Bound: $\le 42,500$ gas (**PASSED**)
 - **Storage Cost Reduction:**
@@ -123,7 +124,7 @@ The project addresses the fundamental conflict in medical informatics: the need 
   - AES-256-GCM + BBS98 Encrypt: **0.367 ms mean** (median: 0.334 ms, P99: 0.651 ms)
   - BBS98 PRE Transform: **0.242 ms mean** (median: 0.225 ms, P99: 0.432 ms)
   - Delegatee Decrypt: **0.173 ms mean** (median: 0.155 ms, P99: 0.343 ms)
-  - Total Pipeline Throughput: **0.997 ms** (< 1.0 ms)
+  - Sum of Mean Component Latencies: **0.997 ms** (0.215 + 0.367 + 0.242 + 0.173 ms; arithmetic sum of individual operation means, not an independently timed end-to-end sequence latency)
 
 ---
 

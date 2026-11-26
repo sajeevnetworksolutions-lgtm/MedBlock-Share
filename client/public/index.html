@@ -577,8 +577,8 @@
       <!-- Comparative Performance Benchmarks Table (Synopsis Section 8) -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div class="pb-4 border-b border-slate-800">
-          <h3 class="font-bold text-lg text-white">Comparative Performance Benchmarks (Section 8)</h3>
-          <p class="text-xs text-slate-400">Formal empirical comparison between Traditional Cloud EHR, Standard Ethereum, Hyperledger, and MedBlock-Share</p>
+          <h3 class="font-bold text-lg text-white">Architectural Comparison Across Healthcare Paradigms (Illustrative)</h3>
+          <p class="text-xs text-slate-400">Illustrative architectural comparison between Traditional Cloud EHR, Standard Full On-Chain Ethereum, Permissioned Consortium Blockchain, and MedBlock-Share. These conceptual comparisons highlight architectural trade-offs and are excluded from empirical benchmark conclusions.</p>
         </div>
 
         <div class="mt-4 overflow-x-auto">
@@ -588,38 +588,38 @@
                 <th class="py-3 px-4">System Framework</th>
                 <th class="py-3 px-4">Emergency Response</th>
                 <th class="py-3 px-4">Tamper Detection</th>
-                <th class="py-3 px-4">Storage Cost (10MB)</th>
+                <th class="py-3 px-4">Storage Cost (10MB Model)</th>
                 <th class="py-3 px-4">Attacker Attribution</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60 font-mono">
               <tr class="hover:bg-slate-800/30">
-                <td class="py-3 px-4 font-semibold text-slate-300">Traditional Cloud EHR</td>
-                <td class="py-3 px-4 text-slate-400">15 - 30 minutes</td>
-                <td class="py-3 px-4 text-slate-400">Passive Audit Log</td>
-                <td class="py-3 px-4 text-slate-400">$0.0002 / mo</td>
-                <td class="py-3 px-4 text-slate-400">Internal Server Log Only</td>
+                <td class="py-3 px-4 font-semibold text-slate-300">Traditional Cloud EHR (Illustrative)</td>
+                <td class="py-3 px-4 text-slate-400">Manual notification workflow (15 - 30 min)</td>
+                <td class="py-3 px-4 text-slate-400">Passive centralized audit log</td>
+                <td class="py-3 px-4 text-slate-400">~$0.00023 / mo (AWS S3 @ $0.023/GB/mo)</td>
+                <td class="py-3 px-4 text-slate-400">Server ingress header log only</td>
               </tr>
               <tr class="hover:bg-slate-800/30">
-                <td class="py-3 px-4 font-semibold text-slate-300">Standard Ethereum EHR</td>
-                <td class="py-3 px-4 text-red-400">No Tele-Triage</td>
-                <td class="py-3 px-4 text-slate-400">Tx Reverts (No Alert)</td>
-                <td class="py-3 px-4 text-red-400">&gt;$1,850.00 (Prohibitive)</td>
-                <td class="py-3 px-4 text-slate-400">Wallet Address Only</td>
+                <td class="py-3 px-4 font-semibold text-slate-300">Standard Ethereum EHR (Full On-Chain)</td>
+                <td class="py-3 px-4 text-slate-400">No built-in real-time tele-triage</td>
+                <td class="py-3 px-4 text-slate-400">Tx reverts on failure (logs rolled back)</td>
+                <td class="py-3 px-4 text-slate-400">&gt;$589,824.00 (327.6k words @ 30 Gwei)</td>
+                <td class="py-3 px-4 text-slate-400">msg.sender wallet address only</td>
               </tr>
               <tr class="hover:bg-slate-800/30">
-                <td class="py-3 px-4 font-semibold text-slate-300">Hyperledger Baseline</td>
-                <td class="py-3 px-4 text-slate-400">Manual Notification</td>
-                <td class="py-3 px-4 text-slate-400">Channel Rejection</td>
-                <td class="py-3 px-4 text-slate-400">$0.04 / tx</td>
-                <td class="py-3 px-4 text-slate-400">Node ID (Permissioned)</td>
+                <td class="py-3 px-4 font-semibold text-slate-300">Hyperledger Baseline (Illustrative)</td>
+                <td class="py-3 px-4 text-slate-400">Consortium notification channel</td>
+                <td class="py-3 px-4 text-slate-400">Channel / policy rejection</td>
+                <td class="py-3 px-4 text-slate-400">Consortium node hosting model</td>
+                <td class="py-3 px-4 text-slate-400">MSP X.509 organization certificate</td>
               </tr>
               <tr class="bg-cyan-950/40 border-l-4 border-cyan-400 font-bold text-white">
-                <td class="py-3.5 px-4 text-cyan-300">MedBlock-Share (Ours)</td>
-                <td class="py-3.5 px-4 text-emerald-400">&lt; 380 ms (Live WebRTC)</td>
-                <td class="py-3.5 px-4 text-cyan-300">Instant Dual Alert</td>
-                <td class="py-3.5 px-4 text-emerald-400">$0.0018 (Polygon L2)</td>
-                <td class="py-3.5 px-4 text-cyan-300">Full Proxy IP + Signature</td>
+                <td class="py-3.5 px-4 text-cyan-300">MedBlock-Share (Prototype)</td>
+                <td class="py-3.5 px-4 text-emerald-400">Sub-ms microbench (0.0065 ms CPU / 31.4 ms WAN)</td>
+                <td class="py-3.5 px-4 text-cyan-300">Non-reverting guard + emitTamperAlert (30.6k gas)</td>
+                <td class="py-3.5 px-4 text-emerald-400">$0.0018 (Illustrative Polygon L2 CID anchor)</td>
+                <td class="py-3.5 px-4 text-cyan-300">Gateway ingress IP + ECDSA signature</td>
               </tr>
             </tbody>
           </table>

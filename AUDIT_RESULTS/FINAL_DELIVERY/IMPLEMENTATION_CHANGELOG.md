@@ -1,8 +1,9 @@
 # MedBlock-Share: Comprehensive Implementation Changelog
 
 **Document:** `AUDIT_RESULTS/FINAL_DELIVERY/IMPLEMENTATION_CHANGELOG.md`  
-**Date:** November 24, 2026  
-**Auditor / Engineer:** DeepMind Autonomous Systems Engineering  
+**Date:** November 25, 2026  
+**Engineering Entity:** Sajeev Network Solutions Engineering  
+**Version:** Academic Research Prototype v2.2  
 
 ---
 
@@ -93,7 +94,7 @@ This changelog records all source code files, smart contracts, test scripts, and
   - **Status:** Enhanced for Hardhat EVM Node
   - **Key Modifications:**
     - Deploys and executes contract tests against Hardhat's in-process EVM node.
-    - Verified non-reverting `tamperProtectedUpdate` execution with `receipt.status === 1`, state preservation, and receipt gas used = 30,652 gas.
+    - Verified non-reverting `tamperProtectedUpdate` execution with `receipt.status === 1` and state preservation; verified `emitTamperAlert` receipt gas used = 30,652 gas.
     - 9/9 tests passing.
 
 - **File:** `scripts/verify_direct.js`
@@ -153,11 +154,11 @@ This changelog records all source code files, smart contracts, test scripts, and
 
 ---
 
-## Final Consistency Harmonization Pass (Release v2.2)
+## Final Consistency Harmonization Pass (Academic Prototype v2.2)
 
 1. **Benchmark and Documentation Consistency:**
    - Treated `benchmark/mimic3_results.json` as the single authoritative source of truth for all recorded measurements.
-   - Synchronized all Markdown, LaTeX, README, and final delivery documentation figures with the actual JSON values ($N = 1,000$ trials: KeyGen 0.215 ms, Encrypt 0.367 ms, Transform 0.242 ms, Decrypt 0.173 ms, total pipeline throughput 0.997 ms).
+   - Synchronized all Markdown, LaTeX, README, and final delivery documentation figures with the actual JSON values ($N = 1,000$ trials: KeyGen 0.215 ms, Encrypt 0.367 ms, Transform 0.242 ms, Decrypt 0.173 ms, sum of mean component latencies 0.997 ms; arithmetic sum of means, not timed end-to-end).
 
 2. **SOS Latency Terminology:**
    - Renamed Python benchmark measurement to **local telemetry-processing microbenchmark latency** (0.0065 ms mean, 0.0056 ms median, 0.0156 ms P99), accurately defining its scope: measures CPU JSON serialization, SHA-256 telemetry hashing, and payload/status preparation (does not measure complete SOS application dispatch or network I/O).
@@ -171,7 +172,8 @@ This changelog records all source code files, smart contracts, test scripts, and
    - Preserved corrected arithmetic under stated assumptions ($33.60 native vs $0.2016 MedBlock for Scenario A; $137.63 native vs $0.0018 MedBlock for Scenario B at 30 Gwei, $3,000/ETH, $0.70/MATIC). Omitted commercial IPFS pinning fees.
 
 4. **Tamper Gas & Forensic Attribution:**
-   - Hardhat EVM receipt gas of 30,652 is strictly asserted in `test/medblock.test.js` via `expect(gasUsed).to.equal(30652n);`.
+   - Hardhat EVM receipt gas of 30,652 is strictly asserted for `emitTamperAlert` in `test/medblock.test.js` via `expect(gasUsed).to.equal(30652n);`.
+   - `tamperProtectedUpdate` is functionally tested for non-reverting execution (`receipt.status === 1`), event persistence, and record preservation.
    - Explicitly documented that the benchmark script references this constant from Hardhat test receipts and does not independently measure it.
    - Clearly labeled in-memory forensic IP, GeoIP, and threat-intelligence information as simulated in development/test harnesses (`scripts/verify_direct.js`, `test/comprehensive_suite.test.js`).
    - Emphasized that IP addresses capture network intermediary topology (reverse proxies, Tor exit nodes), not an attacker's real physical identity.

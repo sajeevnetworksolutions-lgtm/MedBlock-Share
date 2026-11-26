@@ -33,7 +33,7 @@ Cross-institutional sharing of Electronic Health Records (EHR) demands high conf
 
 This paper presents \textbf{MedBlock-Share}, an end-to-end decentralized framework combining Ethereum smart contracts, InterPlanetary File System (IPFS) content-addressed distributed storage, and Blaze-Bleumer-Strauss (BBS98) Proxy Re-Encryption (PRE) integrated with an AES-256-GCM authenticated envelope. We formulate three core contributions: (1) A hybrid cryptographic protocol transforming 256-bit symmetric data encryption keys under delegated PRE without exposing plaintext records or private keys to the semi-trusted proxy; (2) An Ethereum Virtual Machine (EVM) non-reverting tamper defense guard (\texttt{tamperProtectedUpdate}) that resolves the classical EVM paradox where an unauthorized state transaction that reverts inevitably discards all emitted event logs, preserving persistent on-chain security audit records within a strictly bounded gas ceiling ($\le 42,500$ gas); and (3) A decoupled emergency tele-triage architecture enabling rapid on-chain emergency consent elevation, sub-millisecond local telemetry microbenchmark latency ($0.0065 \pm 0.0080$\,ms empirical CPU mean), and WebRTC signaling session lifecycle management. 
 
-Empirical benchmarks conducted over a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm an illustrative 99.40\% on-chain storage cost reduction in structured records (99.9987\% in bulk imaging), a verified tamper logging receipt cost of 30,652 gas on Hardhat EVM (asserted in contract tests), and sub-millisecond cryptographic transformations. We present an unvarnished analysis of the algebraic bidirectionality and collusion properties of BBS98, alongside network-topology-level ingress forensic attribution.
+Empirical benchmarks conducted over a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm an illustrative 99.40\% on-chain storage cost reduction in structured records (99.9987\% in bulk imaging), a verified tamper alert receipt cost of 30,652 gas for \texttt{emitTamperAlert} on Hardhat EVM (asserted in contract tests) alongside non-reverting \texttt{tamperProtectedUpdate} state preservation, and sub-millisecond cryptographic operations (0.997 ms sum of mean component latencies). We present an unvarnished analysis of the algebraic bidirectionality and collusion properties of BBS98, alongside network-topology-level ingress forensic attribution.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -229,7 +229,9 @@ AES-256-GCM Enc            & 0.367 ms  & 0.334 ms  & 0.651 ms  & $\le 5$ ms \\
 BBS98 PRE KeyGen           & 0.215 ms  & 0.201 ms  & 0.336 ms  & $\le 10$ ms \\
 BBS98 PRE Transform        & 0.242 ms  & 0.225 ms  & 0.432 ms  & $\le 15$ ms \\
 Delegatee Decryption       & 0.173 ms  & 0.155 ms  & 0.343 ms  & $\le 15$ ms \\
-Tamper Guard (Hardhat)     & 30,652 gas & 30,652 gas & 30,652 gas & $\le 42,500$ gas \\
+Sum of Mean Crypto Latencies & 0.997 ms  & 0.915 ms  & 1.762 ms  & $\le 1.0$ ms sum \\
+emitTamperAlert (Hardhat)  & 30,652 gas & 30,652 gas & 30,652 gas & $\le 42,500$ gas \\
+tamperProtectedUpdate      & Non-Revert & Event Saved & State Kept & Functional Pass \\
 Tamper Guard (Simulated)   & 28,825 gas & 28,825 gas & 28,825 gas & $\le 42,500$ gas \\
 \bottomrule
 \end{tabular}
@@ -243,7 +245,7 @@ Tamper Guard (Simulated)   & 28,825 gas & 28,825 gas & 28,825 gas & $\le 42,500$
 \end{itemize}
 
 \section{Conclusion}
-MedBlock-Share presents a verified, sound decentralized architecture for patient-centric EHR sharing. By resolving the EVM revert-logging paradox (30,652 gas receipt on Hardhat EVM), decoupling WebRTC emergency signaling, and integrating BBS98 PRE with AES-256-GCM, the system achieves robust security, 99.40\% to 100.00\% storage savings, and sub-millisecond emergency dispatch responsiveness.
+MedBlock-Share presents a verified, sound decentralized research prototype architecture for patient-centric EHR sharing. By resolving the EVM revert-logging paradox (\texttt{tamperProtectedUpdate} functionally preserving state and event logs, with 30,652 gas receipt asserted for \texttt{emitTamperAlert} on Hardhat EVM), decoupling WebRTC emergency signaling, and integrating BBS98 PRE with AES-256-GCM, the system achieves robust security, 99.40\% to 100.00\% storage savings, and sub-millisecond emergency dispatch responsiveness.
 
 \bibliographystyle{IEEEtran}
 \begin{thebibliography}{10}

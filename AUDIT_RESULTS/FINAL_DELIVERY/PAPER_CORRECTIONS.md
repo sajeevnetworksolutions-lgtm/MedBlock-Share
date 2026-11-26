@@ -29,7 +29,7 @@ This document details every specific correction made, contrasting the initial cl
      In `contracts/MedBlockRegistry.sol`, when an unauthorized caller invokes an update, the contract **does not revert**. Instead, it rejects the state mutation (leaves `records[recordId]` unmodified), logs the `UnauthorizedTamperAttempt` event, and returns `false`. Because the transaction terminates cleanly (`status = 0x1`), the event is permanently written to the block log receipt.
   2. **Authorized Sentinel Watchdog Channel (`reportTamperAttempt`):**
      For transactions that fail at the EVM gas or call-stack level before entering application logic, an authorized sentinel node captures the transaction hash and logs the forensic event through an authorized transaction.
-  3. **Verified Gas Bound:** Execution is bounded at $\le 42,500$ gas, with empirical consumption measured at **28,825 gas**.
+  3. **Verified Gas Bound & Functional Tests:** In `test/medblock.test.js`, `tamperProtectedUpdate` is functionally tested for non-reverting execution (`receipt.status === 1`), event persistence, and record preservation. Dedicated alert logging via `emitTamperAlert` is bounded at $\le 42,500$ gas, with empirical consumption measured at **30,652 gas** on Hardhat EVM receipt (**28,825 gas** simulated).
 
 ---
 
@@ -121,13 +121,13 @@ This document details every specific correction made, contrasting the initial cl
     - Total raw data size: 10,485,760 bytes = 327,680 EVM words.
     - Native on-chain storage gas: $327,680 \times 20,000 = 6,553,600,000$ gas ($\approx \$137.63$ on Polygon L2, $\$589,824.00$ on Ethereum L1).
     - MedBlock-Share off-chain IPFS + on-chain CID registration transaction: $84,210$ gas ($\approx \mathbf{\$0.0018}$ on Polygon L2, $\$7.58$ on Ethereum L1).
-    - Derivation: 84,210 gas is an illustrative single-transaction model (21,000 base transaction overhead + metadata state writes + `RecordRegistered` event log) for registering the IPFS CID on-chain.
+    - Derivation: 84,210 gas is an illustrative single-transaction model (21,000 base transaction overhead + metadata writes + `RecordRegistered` event log) for registering the IPFS CID on-chain.
     - Gas savings: $\frac{6,553,600,000 - 84,210}{6,553,600,000} \times 100\% = \mathbf{99.9987\%}$ ($\approx \mathbf{100.00\%}$).
     - *Distinction:* Scenario B models a single large transaction anchoring an off-chain imaging payload, distinct from the aggregate 10,000 structured record batch in Scenario A. External commercial IPFS pinning fees are omitted as they depend on third-party pinning providers.
-  - **Verified Tamper Defense Receipt Gas:**
-    - On Hardhat in-process EVM node (`test/medblock.test.js`): **30,652 gas** with clean non-reverting status `1` (`0x1`), strictly retrieved and asserted via `expect(gasUsed).to.equal(30652n);`.
+  - **Verified Tamper Defense Receipt Gas & Functional Verification:**
+    - On Hardhat in-process EVM node (`test/medblock.test.js`): **30,652 gas** receipt strictly retrieved and asserted on `emitTamperAlert` via `expect(gasUsed).to.equal(30652n);`. `tamperProtectedUpdate` is functionally tested for non-reverting execution (`receipt.status === 1`), event emission, and record-state preservation.
     - On in-memory simulated execution engine: **28,825 gas** (well below the $\le 42,500$ gas limit).
-    - *Audit Note:* The benchmark script references the 30,652 gas figure as an asserted Hardhat EVM receipt constant and does not independently measure it.
+    - *Audit Note:* The benchmark script references the 30,652 gas figure as an asserted Hardhat EVM receipt constant for `emitTamperAlert` and does not independently measure it.
 
 ---
 
@@ -168,7 +168,7 @@ This document details every specific correction made, contrasting the initial cl
   1. Formally documented BBS98 as a research prototype PRE construction with known bidirectionality and collusion boundaries.
   2. Enforced 2048-bit prime subgroup checks ($y^q \equiv 1 \pmod p$) and AES-256-GCM authentication tags to prevent chosen-ciphertext attacks.
   3. Clearly documented the distinction between algebraic unit/integration tests and theoretical reductionist security proofs.
-  4. Cryptographic execution benchmark was conducted over $N = 1,000$ recorded trials in `benchmark/mimic3_benchmark.py`: BBS98 KeyGen (Mean: 0.215 ms, Median: 0.201 ms, P99: 0.336 ms), Client-Side AES-256-GCM + BBS98 Encapsulation (Mean: 0.367 ms, Median: 0.334 ms, P99: 0.651 ms), Proxy Re-Encryption Transform (Mean: 0.242 ms, Median: 0.225 ms, P99: 0.432 ms), Doctor Decryption (Mean: 0.173 ms, Median: 0.155 ms, P99: 0.343 ms), delivering a total pipeline throughput of 0.997 ms (< 1.0 ms).
+  4. Cryptographic execution benchmark was conducted over $N = 1,000$ recorded trials in `benchmark/mimic3_benchmark.py`: BBS98 KeyGen (Mean: 0.215 ms, Median: 0.201 ms, P99: 0.336 ms), Client-Side AES-256-GCM + BBS98 Encapsulation (Mean: 0.367 ms, Median: 0.334 ms, P99: 0.651 ms), Proxy Re-Encryption Transform (Mean: 0.242 ms, Median: 0.225 ms, P99: 0.432 ms), Doctor Decryption (Mean: 0.173 ms, Median: 0.155 ms, P99: 0.343 ms), delivering a sum of mean component latencies of 0.997 ms (< 1.0 ms; arithmetic sum of individual operation means, not an independently timed end-to-end sequence).
 
 ---
 

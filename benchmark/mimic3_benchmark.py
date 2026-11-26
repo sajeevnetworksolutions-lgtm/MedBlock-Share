@@ -130,6 +130,7 @@ def run_benchmark(sample_size: int = 10000):
     print(f"[+] Client-Side AES-256-GCM + BBS98 (1,000 trials): {avg_enc:.3f} ms (Mean)")
     print(f"[+] Proxy Re-Encryption Transform (1,000 trials):   {avg_re:.3f} ms (Mean)")
     print(f"[+] Doctor Decrypt & Tag Verify (1,000 trials):     {avg_dec:.3f} ms (Mean)")
+    print(f"[+] Sum of Mean Component Latencies:                 {(avg_keygen + avg_enc + avg_re + avg_dec):.3f} ms (Arithmetic sum of means, not timed end-to-end)")
 
     # 3. Emergency Tele-Triage SOS Latency Benchmark (Genuine vs Simulated)
     print("\n[*] Measuring Local Telemetry-Processing Microbenchmark Latency (1,000 trials)...")
@@ -248,16 +249,20 @@ def run_benchmark(sample_size: int = 10000):
 
     # 5. Tamper-Alert Gas Bound Audit
     # Note: 30,652 gas is an imported constant reference asserted from actual Hardhat EVM receipt
-    # in test/medblock.test.js (not independently measured by this Python script).
+    # for emitTamperAlert() in test/medblock.test.js (not independently measured by this Python script).
+    # tamperProtectedUpdate() is functionally tested for non-reverting execution, event persistence,
+    # and record-state preservation without a separate gas assertion.
     evm_receipt_gas = 30652
     gas_bound = 42500
-    print(f"\n[*] EVM Tamper Defense Gas Ceiling Compliance Check:")
-    print(f"    Hardhat EVM Test Receipt (Reference):{evm_receipt_gas} gas (asserted in test/medblock.test.js)")
+    print(f"\n[*] EVM Tamper Defense Gas Ceiling Compliance Check (emitTamperAlert):")
+    print(f"    Hardhat EVM Test Receipt (Reference):{evm_receipt_gas} gas (asserted in test/medblock.test.js for emitTamperAlert)")
     print(f"    Dissertation Ceiling:                <= {gas_bound} gas")
     print(f"    Gas Margin:                          {gas_bound - evm_receipt_gas} gas below limit")
     print(f"    Status:                              VERIFIED COMPLIANT")
+    print(f"    Note on tamperProtectedUpdate():     Functionally verified (non-revert, event persistence, state preservation)")
 
     # 6. Save Benchmark Results
+    sum_crypto_means = round(avg_keygen + avg_enc + avg_re + avg_dec, 4)
     results = {
         "timestamp": int(time.time()),
         "benchmark_type": "Synthetic ICU-Like Clinical Scenario Benchmark",
@@ -294,9 +299,11 @@ def run_benchmark(sample_size: int = 10000):
             "scenario_b_native_l1_cost_usd": round(bulk_l1_cost_usd, 2)
         },
         "tamper_alert_gas": {
+            "method": "emitTamperAlert()",
             "consumed": evm_receipt_gas,
             "bound": gas_bound,
-            "compliant": True
+            "compliant": True,
+            "attribution_note": "30,652 gas is the asserted Hardhat EVM receipt for emitTamperAlert() in test/medblock.test.js. tamperProtectedUpdate() is functionally tested for non-reverting execution, event persistence, and record-state preservation."
         },
         "crypto_latencies_ms": {
             "sample_count": crypto_sample_count,
@@ -311,7 +318,9 @@ def run_benchmark(sample_size: int = 10000):
             "proxy_re_encryption_p99": round(statistics.quantiles(re_latencies, n=100)[98], 4),
             "doctor_decryption_mean": round(avg_dec, 4),
             "doctor_decryption_median": round(statistics.median(dec_latencies), 4),
-            "doctor_decryption_p99": round(statistics.quantiles(dec_latencies, n=100)[98], 4)
+            "doctor_decryption_p99": round(statistics.quantiles(dec_latencies, n=100)[98], 4),
+            "sum_of_mean_component_latencies": sum_crypto_means,
+            "sum_of_mean_component_latencies_note": "Arithmetic sum of the four separate operation means (not an independently measured end-to-end pipeline latency)"
         },
         "emergency_sos_latencies": {
             "local_telemetry_processing_microbenchmark_ms": {
@@ -365,7 +374,8 @@ def run_benchmark(sample_size: int = 10000):
             }
         },
         "tamper_defense_gas_audit": {
-            "verification_note": "Imported constant reference asserted from actual Hardhat EVM receipt in test/medblock.test.js (not independently measured by benchmark script)",
+            "target_method": "emitTamperAlert()",
+            "verification_note": "Imported constant reference asserted from actual Hardhat EVM receipt for emitTamperAlert() in test/medblock.test.js (not independently measured by benchmark script). tamperProtectedUpdate() is functionally tested for non-reverting execution, event persistence, and record-state preservation without a separate gas assertion.",
             "hardhat_evm_receipt_gas": evm_receipt_gas,
             "target_bound_ceiling": gas_bound,
             "margin_below_bound": gas_bound - evm_receipt_gas,
@@ -373,32 +383,36 @@ def run_benchmark(sample_size: int = 10000):
         },
         "comparative_summary": [
             {
-                "framework": "Traditional Cloud EHR",
-                "emergency_response": "15 - 30 minutes (Manual)",
-                "tamper_detection": "Passive Centralized Audit Log",
-                "storage_cost_10mb": "$0.0002 / mo (AWS S3)",
-                "attacker_attribution": "Server Ingress Log Only"
+                "framework": "Traditional Cloud EHR (Illustrative Baseline)",
+                "emergency_response": "Manual notification workflow (illustrative scenario estimate: 15-30 min)",
+                "tamper_detection": "Centralized database audit logs (susceptible to privileged insider modification)",
+                "storage_cost_10mb": "~$0.00023 / month (standard AWS S3 pricing at $0.023/GB/month for off-chain storage)",
+                "attacker_attribution": "Application server ingress log only (reverse proxy IP / socket header)",
+                "basis": "Illustrative architectural comparison; not an empirical measurement and excluded from empirical conclusions"
             },
             {
                 "framework": "Standard Ethereum EHR (Full On-Chain)",
-                "emergency_response": "No Real-Time Tele-Triage",
-                "tamper_detection": "Reverts Execution (Logs Rolled Back)",
-                "storage_cost_10mb": f">${bulk_l1_cost_usd:,.2f} USD (Prohibitive)",
-                "attacker_attribution": "Caller Wallet Address Only"
+                "emergency_response": "No built-in real-time tele-triage signaling",
+                "tamper_detection": "Transaction reverts on failure (state restored, log topics discarded per EVM spec)",
+                "storage_cost_10mb": f">${bulk_l1_cost_usd:,.2f} USD (calculated at 327,680 SSTORE words, 30 Gwei, $3,000/ETH)",
+                "attacker_attribution": "msg.sender wallet address only (no network IP visibility in EVM state)",
+                "basis": "Theoretical EVM Cancun gas model (20,000 gas/word SSTORE)"
             },
             {
-                "framework": "Hyperledger Permissioned Baseline",
-                "emergency_response": "Manual Push Notification",
-                "tamper_detection": "Channel Rejection",
-                "storage_cost_10mb": "$0.04 / tx (Consortium Node)",
-                "attacker_attribution": "Organization Node ID"
+                "framework": "Hyperledger Permissioned Baseline (Illustrative Baseline)",
+                "emergency_response": "Consortium-managed notification channel (illustrative scenario estimate)",
+                "tamper_detection": "Endorsement policy rejection / MSP credential enforcement",
+                "storage_cost_10mb": "Illustrative enterprise consortium infrastructure cost; depends on private node hosting model",
+                "attacker_attribution": "Membership Service Provider (MSP) X.509 organization certificate identity",
+                "basis": "Illustrative literature baseline; not directly measured in this benchmark and excluded from empirical conclusions"
             },
             {
-                "framework": "MedBlock-Share (Research Prototype)",
-                "emergency_response": f"Sub-millisecond local telemetry microbenchmark ({local_mean:.4f} ms CPU / {wan_mean:.1f} ms modeled WAN)",
-                "tamper_detection": "Non-Reverting Persistent Event (30,652 gas receipt asserted on Hardhat EVM)",
-                "storage_cost_10mb": f"${bulk_polygon_cost_usd:.4f} USD (Illustrative Off-Chain CID Anchor)",
-                "attacker_attribution": "Reverse Proxy Ingress IP + ECDSA Signature (Simulated Network Topology, Not Real Identity)"
+                "framework": "MedBlock-Share (Academic Research Prototype)",
+                "emergency_response": f"Local telemetry-processing microbenchmark ({local_mean:.4f} ms CPU / {wan_mean:.1f} ms modeled WAN)",
+                "tamper_detection": "Non-reverting state defense (tamperProtectedUpdate) + emitTamperAlert (30,652 gas receipt asserted on Hardhat EVM)",
+                "storage_cost_10mb": f"${bulk_polygon_cost_usd:.4f} USD (illustrative single-transaction off-chain CID anchor at 84,210 gas)",
+                "attacker_attribution": "Reverse proxy ingress IP + ECDSA signature (simulated network topology, not real physical identity)",
+                "basis": "Empirical prototype measurements and theoretical gas models"
             }
         ]
     }

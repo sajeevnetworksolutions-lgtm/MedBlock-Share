@@ -17,7 +17,7 @@ In this paper, we present **MedBlock-Share**, an end-to-end decentralized patien
 2. **EVM Non-Reverting Tamper Defense Guard:** A sound smart contract architecture resolving the fundamental Ethereum Virtual Machine (EVM) paradox where an unauthorized state transaction that reverts (`REVERT`) rolls back all associated event logs. Our dual-channel defense employs a non-reverting state rejection guard (`tamperProtectedUpdate`) that preserves persistent on-chain `UnauthorizedTamperAttempt` security logs within a strictly bounded gas envelope ($\le 42,500$ gas), coupled with an authorized sentinel watchdog channel (`reportTamperAttempt`).
 3. **Decoupled Low-Latency Emergency Tele-Triage:** A 1-Click emergency override workflow providing instant on-chain consent elevation, sub-millisecond local telemetry-processing microbenchmark latency (0.0065 ms CPU mean), and robust WebRTC signaling session lifecycle management and clinical precaution guidance.
 
-We provide a rigorous empirical evaluation using a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark (calibrated against standard physiological ranges for vitals, SpO2, heart rate, and blood pressure without ingesting or exposing restricted patient data). Results demonstrate an illustrative **99.40% gas reduction** in structured clinical record scenarios (and **99.9987% reduction** in bulk imaging scenarios), genuine sub-millisecond local telemetry-processing microbenchmark latency (0.0065 ms CPU mean for JSON serialization, hashing, and payload prep), a verified non-reverting tamper defense gas cost of **30,652 gas** on Hardhat EVM receipt (asserted in contract tests), and sub-millisecond cryptographic operations. Furthermore, we provide a transparent cryptographic and forensic boundary analysis, articulating the bidirectional and collusion characteristics of the foundational BBS98 scheme, distinguishing WebRTC signaling from physical audiovisual streaming in headless test environments, and establishing that network-level IP attribution identifies ingress topology rather than physical individuals.
+We provide a rigorous empirical evaluation using a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark (calibrated against standard physiological ranges for vitals, SpO2, heart rate, and blood pressure without ingesting or exposing restricted patient data). Results demonstrate an illustrative **99.40% gas reduction** in structured clinical record scenarios (and **99.9987% reduction** in bulk imaging scenarios), genuine sub-millisecond local telemetry-processing microbenchmark latency (0.0065 ms CPU mean for JSON serialization, hashing, and payload prep), a verified non-reverting state defense (`tamperProtectedUpdate`) that preserves audit logs with `emitTamperAlert` gas cost of **30,652 gas** on Hardhat EVM receipt (asserted in contract tests), and sub-millisecond cryptographic operations (0.997 ms sum of mean component latencies). Furthermore, we provide a transparent cryptographic and forensic boundary analysis, articulating the bidirectional and collusion characteristics of the foundational BBS98 scheme, distinguishing WebRTC signaling from physical audiovisual streaming in headless test environments, and establishing that network-level IP attribution identifies ingress topology rather than physical individuals.
 
 **Keywords:** Electronic Health Records, Proxy Re-Encryption, BBS98, Ethereum Smart Contracts, InterPlanetary File System (IPFS), WebRTC Tele-Triage, Smart Contract Forensics, EVM Event Persistence.
 
@@ -235,13 +235,16 @@ MedBlock-Share solves this architectural problem through a dual-channel defense 
    }
    ```
 
-### 5.3 Gas Consumption Bounds
-The gas consumption of `tamperProtectedUpdate` is strictly bounded and verified:
-- Base transaction cost: 21,000 gas
-- Storage lookup (`SLOAD` cold/warm): 2,100 / 100 gas
-- Event emission (`LOG3` with data payload): ~4,500 gas
-- Simulated in-memory execution cost: **28,825 gas**
-- **Hardhat EVM In-Process Execution Receipt (`receipt.gasUsed`):** **30,652 gas** (executed under Solidity 0.8.24 `viaIR: true`, non-reverting `receipt.status === 1`), well below our theoretical ceiling of 42,500 gas.
+### 5.3 Functional Verification and Gas Consumption Bounds
+In `test/medblock.test.js`, the tamper defense mechanisms are thoroughly verified across two layers:
+1. **Functional Verification of `tamperProtectedUpdate`:** The method is functionally tested for non-reverting execution (`receipt.status === 1`), event persistence (emitting `UnauthorizedTamperAttempt` permanently into the block receipt), and record-state preservation (`record.ipfsCID` remains strictly unmodified).
+2. **Gas Ceiling Bound on `emitTamperAlert`:** The dedicated alert emission path (`emitTamperAlert`) is benchmarked and asserted to execute strictly within the $\le 42,500$ gas limit:
+   - Base transaction cost: 21,000 gas
+   - Memory & stack operations (`viaIR: true`): ~240 gas
+   - Storage lookup (`SLOAD` cold/warm): ~2,200 gas
+   - Event emission (`LOG3` with data payload): ~5,385 gas
+   - Simulated in-memory execution cost: **28,825 gas**
+   - **Hardhat EVM In-Process Execution Receipt (`receipt.gasUsed` for `emitTamperAlert`):** **30,652 gas** (asserted via `expect(gasUsed).to.equal(30652n)` in `test/medblock.test.js`), well below our theoretical ceiling of 42,500 gas.
 
 ---
 
@@ -338,8 +341,10 @@ To provide meaningful security forensics without fabricating claims:
 | **BBS98 PRE Key Generation** | Empirical (Crypto) | 1,000 trials | 0.215 ms | 0.201 ms | 0.265 ms | 0.336 ms | $\le 10$ ms (Pass) |
 | **Proxy Re-Encryption Transform** | Empirical (Crypto) | 1,000 trials | 0.242 ms | 0.225 ms | 0.312 ms | 0.432 ms | $\le 15$ ms (Pass) |
 | **Delegatee AES-GCM Decryption** | Empirical (Crypto) | 1,000 trials | 0.173 ms | 0.155 ms | 0.245 ms | 0.343 ms | $\le 15$ ms (Pass) |
-| **Tamper Guard Execution (Hardhat EVM)**| EVM Receipt Gas | Hardhat Node | 30,652 gas | 30,652 gas | 30,652 gas | 30,652 gas | $\le 42,500$ gas (Asserted in contract test) |
-| **Tamper Guard Execution (Simulated)** | EVM Simulation | 500 trials | 28,825 gas | 28,825 gas | 28,825 gas | 28,825 gas | $\le 42,500$ gas (Pass) |
+| **Sum of Mean Component Latencies** | Arithmetic Sum of Means | 1,000 trials | 0.997 ms | 0.915 ms | 1.307 ms | 1.762 ms | Arithmetic sum of means (< 1.0 ms) |
+| **Tamper Defense emitTamperAlert (Hardhat EVM)**| EVM Receipt Gas | Hardhat Node | 30,652 gas | 30,652 gas | 30,652 gas | 30,652 gas | $\le 42,500$ gas (Asserted in contract test) |
+| **Tamper Defense tamperProtectedUpdate**| Functional Test | Hardhat Node | Non-Revert (0x1) | Event Persisted | State Preserved | N/A | Functionally Tested (Pass) |
+| **Tamper Defense (Simulated Engine)** | EVM Simulation | 500 trials | 28,825 gas | 28,825 gas | 28,825 gas | 28,825 gas | $\le 42,500$ gas (Pass) |
 
 ```
 Local Telemetry-Processing Microbenchmark Latency (1,000 Trials):
@@ -371,7 +376,7 @@ We explicitly highlight the fundamental properties of the BBS98 scheme:
 
 ## 10. Conclusion and Future Directions
 
-In this work, we designed, implemented, and empirically validated **MedBlock-Share**, an open-source decentralized EHR sharing platform combining Ethereum smart contracts, IPFS distributed storage, and BBS98 Proxy Re-Encryption with an AES-256-GCM authenticated envelope. We resolved the fundamental EVM revert-logging paradox through a non-reverting state defense pattern (measured at 30,652 gas in Hardhat EVM receipt and asserted in `test/medblock.test.js`), demonstrated sub-millisecond local telemetry microbenchmark latency (0.0065 ms CPU mean), verified WebRTC signaling session lifecycle management via an in-memory functional test, and provided transparent forensic network attribution. Empirical benchmarks on a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm an illustrative 99.40% cost reduction in structured records (and 99.9987% reduction in bulk imaging files) over on-chain storage and sub-millisecond cryptographic operations.
+In this work, we designed, implemented, and empirically validated **MedBlock-Share**, an open-source decentralized EHR sharing platform combining Ethereum smart contracts, IPFS distributed storage, and BBS98 Proxy Re-Encryption with an AES-256-GCM authenticated envelope. We resolved the fundamental EVM revert-logging paradox through a non-reverting state defense pattern (`tamperProtectedUpdate` functionally verified for non-revert, event persistence, and record preservation; `emitTamperAlert` measured at 30,652 gas on Hardhat EVM receipt and asserted in `test/medblock.test.js`), demonstrated sub-millisecond local telemetry microbenchmark latency (0.0065 ms CPU mean), verified WebRTC signaling session lifecycle management via an in-memory functional test, and provided transparent forensic network attribution. Empirical benchmarks on a 10,000-record Synthetic ICU-Like Clinical Scenario Benchmark confirm an illustrative 99.40% cost reduction in structured records (and 99.9987% reduction in bulk imaging files) over on-chain storage and sub-millisecond cryptographic operations (0.997 ms sum of mean component latencies).
 
 Future work will explore the migration of the re-encryption engine to post-quantum lattice-based constructions (e.g., Kyber-based PRE) and multi-party threshold computation (MPC) to eliminate single-proxy trust assumptions entirely.
 

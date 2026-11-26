@@ -274,12 +274,12 @@ async function runDirectVerification() {
     assert.strictEqual(benchData.crypto_sample_count, 1000, "Crypto sample count must equal 1,000 recorded iterations");
     assert.ok(benchData.economic_cost_analysis, "Economic cost analysis must be present");
     assert.strictEqual(benchData.economic_cost_analysis.scenario_a_gas_savings_pct, 99.4, "Scenario A gas savings must equal 99.40%");
-    assert.strictEqual(benchData.tamper_alert_gas.consumed, 30652, "EVM receipt gas must equal 30,652");
+    assert.strictEqual(benchData.tamper_alert_gas.consumed, 30652, "EVM receipt gas for emitTamperAlert must equal 30,652");
 
     console.log(`    Total Records:            ${benchData.sample_records}`);
     console.log(`    Crypto Sample Count:      ${benchData.crypto_sample_count} iterations`);
     console.log(`    Local Telemetry Microbench:${benchData.tele_triage_sos_latencies_ms.mean} ms`);
-    console.log(`    Tamper Alert Receipt Gas: ${benchData.tamper_alert_gas.consumed} gas (Limit <= 42,500 gas)`);
+    console.log(`    emitTamperAlert Receipt:  ${benchData.tamper_alert_gas.consumed} gas (Limit <= 42,500 gas)`);
     console.log(`    Scenario A Gas Savings:   ${benchData.economic_cost_analysis.scenario_a_gas_savings_pct}%`);
     console.log(`    Scenario A Polygon Cost:  $${benchData.economic_cost_analysis.scenario_a_polygon_l2_cost_usd} USD`);
     console.log(`    Scenario B Polygon Cost:  $${benchData.economic_cost_analysis.scenario_b_polygon_l2_cost_usd} USD`);
